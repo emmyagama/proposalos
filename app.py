@@ -626,19 +626,19 @@ def render_screen_5():
         
         # 2. Pass the status_placeholder into generate_proposal as a parameter
         proposal = generate_proposal(
-            industry=state["industry"],
-            proposal_type=state["proposal_type"],
-            tone=state["tone"],
-            sender_name=state["sender_name"],
-            sender_credentials=state["sender_credentials"],
-            client_name=state["client_name"],
-            client_problem=state["client_problem"],
-            deliverables=deliverables_str,
-            budget_range=state["budget_range"],
-            timeline=state["timeline"],
-            sections=state["selected_sections"],
-            status_ui=status_placeholder, # ← ADD THIS PARAMETER
-        )
+    industry=state["industry"],
+    proposal_type=state["proposal_type"],
+    tone=state["tone"],
+    sender_name=state["sender_name"],
+    sender_credentials=state["sender_credentials"],
+    client_name=state["client_name"],
+    client_problem=state["client_problem"],
+    deliverables=deliverables_str,
+    budget_range=state["budget_range"],
+    timeline=state["timeline"],
+    sections=state["selected_sections"],  # Make sure this matches!
+    status_ui=status_placeholder,         # Make sure this matches!
+)
         
         # 3. Final step after text is generated
         status_placeholder.markdown(

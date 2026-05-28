@@ -170,10 +170,16 @@ def call_gemini(system_prompt, user_prompt, status_ui):
 
 def generate_proposal(industry, proposal_type, tone, sender_name, sender_credentials,
                       client_name, client_problem, deliverables, budget_range, timeline, sections, status_ui):
-
+    """
+    Main orchestrator. Builds prompts, calls Gemini, returns proposal text.
+    """
+    # 1. Pass data to build the system prompt
     system_prompt = build_system_prompt(industry, proposal_type, tone, sections)
+    
+    # 2. Pass data to build the user prompt
     user_prompt = build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline)
     
-    # Pass the UI controller down to the network call
+    # 3. Pass prompts and the status_ui object down to the network call
     proposal = call_gemini(system_prompt, user_prompt, status_ui)
+    
     return proposal
