@@ -296,7 +296,7 @@ def render_progress(current):
             <span class="progress-label">{label}</span>
         </div>"""
 
-    st.markdown(f"""
+        st.markdown(f"""
     <div class="progress-container">
         {dots_html}
     </div>
