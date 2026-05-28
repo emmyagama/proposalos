@@ -243,6 +243,12 @@ st.markdown("""
         /* Hide Streamlit footer */
     footer {visibility: hidden;}
     header {visibility: hidden;}
+
+        /* Force columns to stay horizontal on mobile */
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
