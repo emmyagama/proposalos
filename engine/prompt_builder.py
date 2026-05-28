@@ -10,7 +10,7 @@ import streamlit as st
 from config.language_registry import LANGUAGE_REGISTRY
 
 
-def build_system_prompt(industry, proposal_type, tone):
+def build_system_prompt(industry, proposal_type, tone, sections=None):
     """
     Builds a compressed system prompt optimized for smaller models.
     Uses instruction-dense language, minimal explanation, tight formatting rules.
@@ -32,6 +32,19 @@ def build_system_prompt(industry, proposal_type, tone):
         "Technical": "Write with analytical depth. Use precise terminology. Emphasize methodology and process."
     }
     tone_instruction = tone_instructions.get(tone, "Write with confident authority. Concise sentences. Direct recommendations.")
+
+# Dynamic section list for OUTPUT FORMAT
+    if sections is None:
+        sections = [
+            "Executive Summary", "Understanding Your Situation",
+            "Proposed Solution", "Scope of Work", "Timeline",
+            "Investment & Value Justification", "Next Steps", "Follow-Up Message"
+        ]
+
+    section_instructions = "\n".join(
+        [f"## {s}\n[Generate content for this section following the structural rules above.]"
+         for s in sections]
+    )
 
     system_prompt = f"""You are a {industry} proposal strategist. {tone_instruction}
 
@@ -153,11 +166,11 @@ def call_openrouter(system_prompt, user_prompt, model="google/gemini-2.0-flash-0
 
 def generate_proposal(industry, proposal_type, tone, business_name,
                       client_problem, deliverables, budget_range, timeline,
-                      model="google/gemini-2.0-flash-001"):
+                      model="google/gemini-2.0-flash-001", sections=None):
     """
     Main orchestrator. Builds prompts, calls AI, returns proposal text.
     """
-    system_prompt = build_system_prompt(industry, proposal_type, tone)
+    system_prompt = build_system_prompt(industry, proposal_type, tone, sections)
     user_prompt = build_user_prompt(business_name, client_problem, deliverables, budget_range, timeline)
     proposal = call_openrouter(system_prompt, user_prompt, model)
     return proposal
