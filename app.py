@@ -174,10 +174,10 @@ st.markdown("""
     .cta-button {
         display: inline-block;
         background: #8B1A1A;
-        color: #FFFFFF;
+        color: #FFFFFF !important;
         padding: 0.7rem 1.5rem;
         border-radius: 8px;
-        text-decoration: none;
+        text-decoration: none !important;
         font-weight: 500;
         font-size: 0.9rem;
         margin-top: 0.75rem;
@@ -185,8 +185,8 @@ st.markdown("""
     }
     .cta-button:hover {
         background: #6B1414;
-        text-decoration: none;
-        color: #FFFFFF;
+        text-decoration: none !important;
+        color: #FFFFFF !important;
     }
 
     /* Checkbox cards */
