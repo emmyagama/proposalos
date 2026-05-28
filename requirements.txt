@@ -1,4 +1,4 @@
 streamlit==1.38.0
 requests==2.32.3
 weasyprint==68.1
-pillow==10.2.0
+pillow==12.2.0
