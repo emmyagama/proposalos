@@ -25,6 +25,11 @@ st.set_page_config(
     page_icon="📄",
     layout="wide",
     initial_sidebar_state="collapsed",
+    menu_items={
+        "Get help": None,
+        "Report a bug": None,
+        "About": "ProposalOS — Structured proposal intelligence for consulting and service firms."
+    }
 )
 
 # =============================================================================
@@ -219,6 +224,10 @@ st.markdown("""
         border-color: #e8e5e0;
         margin: 1.5rem 0;
     }
+            
+        /* Hide Streamlit footer */
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
