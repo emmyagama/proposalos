@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  /* ── Page Setup ─────────────────────── */
+  @page {
+    size: A4;
+    margin: 22mm 22mm 24mm 22mm;
+    @bottom-center {
+      content: counter(page);
+      font-family: 'Inter', sans-serif;
+      font-size: 7.5pt;
+      color: #9E9E9E;
+      padding-top: 8mm;
+      border-top: 0.3mm solid #C4A96A;
+      width: 100%;
+    }
+  }
+
+  @page :first {
+    margin-top: 0;
+  }
+
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #3A3A3A;
+  }
+
+  /* ── Cover Page ─────────────────────── */
+  .cover-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    page-break-after: always;
+    text-align: center;
+    padding: 0 10mm;
+  }
+
+  .cover-top-rule {
+    width: 100%;
+    height: 1.5px;
+    background: #C4A96A;
+    position: absolute;
+    top: 28mm;
+    left: 0;
+  }
+
+  .cover-title {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 26pt;
+    font-weight: 700;
+    color: #1A1A1A;
+    letter-spacing: 1px;
+    margin-bottom: 6pt;
+    text-transform: uppercase;
+  }
+
+  .cover-subtitle {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 16pt;
+    font-weight: 400;
+    color: #C4A96A;
+    margin-bottom: 20pt;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+  }
+
+  .cover-accent {
+    font-size: 14pt;
+    color: #C4A96A;
+    margin-bottom: 24pt;
+  }
+
+  .cover-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10pt;
+    font-weight: 500;
+    color: #3A3A3A;
+    margin-bottom: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .cover-client {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 15pt;
+    font-weight: 400;
+    color: #1A1A1A;
+    margin-bottom: 22pt;
+  }
+
+  .cover-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 9pt;
+    color: #9E9E9E;
+    line-height: 1.6;
+  }
+
+  .cover-bottom-rule {
+    width: 100%;
+    height: 1px;
+    background: #C4A96A;
+    position: absolute;
+    bottom: 32mm;
+    left: 0;
+  }
+
+  .cover-brand {
+    font-family: 'Inter', sans-serif;
+    font-size: 7.5pt;
+    color: #9E9E9E;
+    position: absolute;
+    bottom: 20mm;
+    right: 22mm;
+  }
+
+  /* ── Running Header (from page 2) ───── */
+  .running-header {
+    position: running(runningHeader);
+    font-family: 'Inter', sans-serif;
+    font-size: 7pt;
+    color: #9E9E9E;
+    text-align: right;
+    padding-bottom: 3mm;
+    border-bottom: 0.3mm solid #C4A96A;
+    margin-bottom: 8mm;
+  }
+
+  @page :not(:first) {
+    @top-right {
+      content: element(runningHeader);
+    }
+  }
+
+  /* ── Section Headers ────────────────── */
+  .section-block {
+    margin-top: 14pt;
+  }
+
+  .section-top-rule {
+    width: 8mm;
+    height: 0.4mm;
+    background: #C4A96A;
+    margin-bottom: 4pt;
+  }
+
+  .section-title {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 14pt;
+    font-weight: 700;
+    color: #1A1A1A;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 4pt 0;
+  }
+
+  .section-bottom-rule {
+    width: 100%;
+    height: 0.3mm;
+    background: #C4A96A;
+    margin-bottom: 10pt;
+  }
+
+  /* ── Sub-headers ────────────────────── */
+  .subheader {
+    font-family: 'Inter', sans-serif;
+    font-size: 10pt;
+    font-weight: 600;
+    color: #3A3A3A;
+    margin-top: 10pt;
+    margin-bottom: 4pt;
+  }
+
+  /* ── Body Text ──────────────────────── */
+  .body-text {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #3A3A3A;
+    text-align: justify;
+    margin: 0 0 6pt 0;
+  }
+
+  .body-bold {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 10pt;
+    font-weight: 700;
+    line-height: 1.7;
+    color: #3A3A3A;
+    text-align: justify;
+    margin: 0 0 6pt 0;
+  }
+
+  /* ── Bullet List ────────────────────── */
+  .bullet-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 4pt 0 8pt 0;
+  }
+
+  .bullet-list li {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #3A3A3A;
+    text-align: justify;
+    padding-left: 14pt;
+    margin-bottom: 3pt;
+    position: relative;
+  }
+
+  .bullet-list li::before {
+    content: '◆';
+    font-size: 7pt;
+    color: #C4A96A;
+    position: absolute;
+    left: 0;
+    top: 2pt;
+  }
+
+  /* ── Disclaimer ─────────────────────── */
+  .disclaimer {
+    margin-top: 20pt;
+    padding-top: 8pt;
+    border-top: 0.3mm solid #E5E0D8;
+    font-family: 'Inter', sans-serif;
+    font-size: 7pt;
+    color: #9E9E9E;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="running-header">ProposalOS &nbsp;|&nbsp; Confidential</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- COVER PAGE                             -->
+<!-- ═══════════════════════════════════════ -->
+<div class="cover-page">
+  <div class="cover-top-rule"></div>
+
+  <div class="cover-title">{{PROPOSAL_TYPE}}</div>
+  <div class="cover-subtitle">Proposal</div>
+  <div class="cover-accent">◆</div>
+
+  <div class="cover-label">Prepared for</div>
+  <div class="cover-client">{{CLIENT_NAME}}</div>
+
+  <div class="cover-meta">
+    {{DATE}}<br>
+    Confidential
+  </div>
+
+  <div class="cover-bottom-rule"></div>
+  <div class="cover-brand">ProposalOS</div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- CONTENT                               -->
+<!-- ═══════════════════════════════════════ -->
+{{CONTENT}}
+
+<div class="disclaimer">
+  This proposal was generated using ProposalOS. All content should be reviewed before sending to the client.
+</div>
+
+</body>
+</html>
