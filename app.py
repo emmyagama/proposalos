@@ -146,6 +146,13 @@ st.markdown("""
         border-color: #1a1a1a;
     }
 
+    /* Progress indicator */
+    .progress-dots {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin: 1.5rem 0 2rem 0;
+    
         /* Progress indicator — horizontal on all screens */
     .progress-container {
         display: flex;
@@ -296,7 +303,7 @@ def render_progress(current):
             <span class="progress-label">{label}</span>
         </div>"""
 
-        st.markdown(f"""
+    st.markdown(f"""
     <div class="progress-container">
         {dots_html}
     </div>
