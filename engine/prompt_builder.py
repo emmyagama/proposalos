@@ -112,7 +112,7 @@ Generate the complete proposal following all structural rules and format specifi
     return user_prompt
 
 
-def call_openrouter(system_prompt, user_prompt, model="google/gemini-2.0-flash-001"):
+def call_openrouter(system_prompt, user_prompt, model="google/gemini-2.5-flash-001"):
     """
     Calls OpenRouter API. Returns generated text or error message.
     """
@@ -157,7 +157,7 @@ def call_openrouter(system_prompt, user_prompt, model="google/gemini-2.0-flash-0
 
 def generate_proposal(industry, proposal_type, tone, sender_name, sender_credentials,
                       client_name, client_problem, deliverables, budget_range, timeline,
-                      model="google/gemini-2.0-flash-001", sections=None):
+                      model="google/gemini-2.5-flash-001", sections=None):
     """
     Main orchestrator. Builds prompts, calls AI, returns proposal text.
     """
