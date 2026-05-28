@@ -112,48 +112,68 @@ Generate the complete proposal following all structural rules and format specifi
     return user_prompt
 
 
-def call_openrouter(system_prompt, user_prompt, model="google/gemini-2.5-flash-001"):
+import time
+
+def call_gemini(system_prompt, user_prompt):
     """
-    Calls OpenRouter API. Returns generated text or error message.
+    Calls Google AI Studio Gemini API (free tier).
+    Tries Gemini 3.5 Flash first. If the server is overloaded (503),
+    it automatically falls back to Gemini 2.5 Flash to guarantee a response.
     """
-    api_key = st.secrets["OPENROUTER_API_KEY"]
+    from google import genai
+    from google.genai import types
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "https://proposalos.streamlit.app",
-        "Content-Type": "application/json"
-    }
+    # 1. Define your fallback priority array (Best model first)
+    models_to_try = [
+        "gemini-3.5-flash", 
+        "gemini-2.5-flash"
+    ]
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 3000,
-        "top_p": 0.9
-    }
-
+    # 2. Initialize the master client
     try:
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=90
+        client = genai.Client()
+        
+        config = types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            temperature=0.7,
+            max_output_tokens=8000, # Expanded ceiling for full proposals
+            top_p=0.9,
         )
 
-        if response.status_code == 200:
-            result = response.json()
-            return result["choices"][0]["message"]["content"]
-        else:
-            return f"API Error {response.status_code}: {response.text[:300]}"
+        # 3. Loop through the fallback array
+        for model_name in models_to_try:
+            # Give each model 2 quick retry attempts for minor blips
+            for attempt in range(2): 
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=user_prompt,
+                        config=config
+                    )
+                    return response.text # Success! Return text immediately
 
-    except requests.exceptions.Timeout:
-        return "The request took too long. This happens occasionally. Please click Generate again — your inputs are saved."
-    except requests.exceptions.RequestException as e:
-        return f"Connection error: {str(e)[:200]}"
+                except Exception as e:
+                    error_msg = str(e)
+                    
+                    # If it's a 503 error, try a quick retry before giving up on this model
+                    if "503" in error_msg and attempt == 0:
+                        time.sleep(2) # Pause for 2 seconds
+                        continue # Try the same model one more time
+                    
+                    # If it's still failing with a 503, break the inner loop 
+                    # and let the outer loop try the next model in the array
+                    if "503" in error_msg:
+                        break 
+                        
+                    # If it's a different error (like a bad prompt or invalid API key), 
+                    # fail immediately instead of looping endlessly
+                    return f"API Error: {error_msg[:300]}"
 
+        # If the code reaches this point, all models in the array failed
+        return "API Error: All available Gemini models are currently experiencing high demand. Please try again in a few minutes."
+
+    except Exception as e:
+        return f"Initialization Error: {str(e)[:300]}"
 
 def generate_proposal(industry, proposal_type, tone, sender_name, sender_credentials,
                       client_name, client_problem, deliverables, budget_range, timeline,
@@ -163,5 +183,5 @@ def generate_proposal(industry, proposal_type, tone, sender_name, sender_credent
     """
     system_prompt = build_system_prompt(industry, proposal_type, tone, sections)
     user_prompt = build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline)
-    proposal = call_openrouter(system_prompt, user_prompt, model)
+    proposal = call_gemini(system_prompt, user_prompt)
     return proposal
