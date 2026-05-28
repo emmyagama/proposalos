@@ -145,13 +145,6 @@ st.markdown("""
         background-color: #1a1a1a;
         border-color: #1a1a1a;
     }
-
-    /* Progress indicator */
-    .progress-dots {
-        display: flex;
-        justify-content: center;
-        gap: 0.75rem;
-        margin: 1.5rem 0 2rem 0;
     
         /* Progress indicator — horizontal on all screens */
     .progress-container {
