@@ -146,41 +146,6 @@ st.markdown("""
         border-color: #1a1a1a;
     }
     
-        /* Progress indicator — horizontal on all screens */
-    .progress-container {
-        display: flex;
-        justify-content: center;
-        gap: 0.5rem;
-        margin: 1.5rem 0 2rem 0;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-    }
-    .progress-step {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: 44px;
-        flex-shrink: 0;
-    }
-    .progress-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #e0dcd5;
-        margin-bottom: 4px;
-    }
-    .progress-dot.active {
-        background: #8B7355;
-    }
-    .progress-dot.done {
-        background: #6b5a45;
-    }
-    .progress-label {
-        font-size: 0.65rem;
-        color: #8b8b8b;
-        white-space: nowrap;
-    }
-
     /* Output container */
     .proposal-output {
         background: #fdfdfc;
