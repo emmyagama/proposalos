@@ -106,32 +106,36 @@ def clean_inline_markdown(text):
 
 # ── Main Generator ───────────────────────────────────
 
-def generate_pdf(proposal_text, business_name="Client", proposal_type="Business Proposal"):
+def generate_pdf(proposal_text, client_name="Client", proposal_type="Business Proposal", sender_name=""):
     """
     Generates a consultant-grade branded PDF from proposal text.
     
     Args:
         proposal_text: Markdown-formatted proposal from the AI
-        business_name: Client name for the cover page
+        client_name: Client name for the cover page
         proposal_type: Engagement type for the cover title
+        sender_name: Sender firm name for the cover page
     
     Returns:
         bytes: PDF file as bytes for Streamlit's download_button
     """
-    # Parse proposal body (stops at Follow-Up Message)
     content_html = parse_markdown_to_html(proposal_text)
 
-    # Load template
     with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
         template = f.read()
 
-    # Inject dynamic values
     html = template.replace("{{PROPOSAL_TYPE}}", proposal_type.upper())
-    html = html.replace("{{CLIENT_NAME}}", business_name)
+    html = html.replace("{{CLIENT_NAME}}", client_name)
     html = html.replace("{{DATE}}", datetime.now().strftime("%B %d, %Y"))
     html = html.replace("{{CONTENT}}", content_html)
 
-    # Render PDF
+    # Handle sender line — show if provided, hide if not
+    if sender_name.strip():
+        sender_html = f'<div class="cover-label">Prepared by</div><div class="cover-sender">{sender_name}</div>'
+    else:
+        sender_html = ""
+    html = html.replace("{{SENDER}}", sender_html)
+
     buf = BytesIO()
     HTML(string=html).write_pdf(buf)
     return buf.getvalue()

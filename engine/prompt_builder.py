@@ -33,7 +33,7 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
     }
     tone_instruction = tone_instructions.get(tone, "Write with confident authority. Concise sentences. Direct recommendations.")
 
-# Dynamic section list for OUTPUT FORMAT
+    # Dynamic section list for OUTPUT FORMAT
     if sections is None:
         sections = [
             "Executive Summary", "Understanding Your Situation",
@@ -41,10 +41,25 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
             "Investment & Value Justification", "Next Steps", "Follow-Up Message"
         ]
 
-    section_instructions = "\n".join(
-        [f"## {s}\n[Generate content for this section following the structural rules above.]"
-         for s in sections]
-    )
+    # Full instructions for each section type
+    section_templates = {
+        "Executive Summary": "2-3 paragraphs. First paragraph: Anchor in the client's specific situation and industry context — make them feel seen. Do not start with \"This proposal outlines...\" Start with what's at stake for them specifically. Second paragraph: Credibility anchor (methodology, relevant expertise). Third: Immediate value statement — what changes for them if they say yes.",
+        "Understanding Your Situation": "2-3 paragraphs. Frame current reality and cost of inaction. Use symptom language.",
+        "Proposed Solution": "Structured as: Objectives, Approach, Deliverables. Be specific. No vagueness.",
+        "Scope of Work": "Bulleted list. Clear boundaries. What's included and what's not.",
+        "Timeline": "Phased breakdown with durations. Link phases to deliverables.",
+        "Investment & Value Justification": "Frame cost as investment. Compare the investment against the cost of inaction using concrete logic (e.g., \"If the client loses X deals, the cost of inaction exceeds this investment Y times over\"). Connect to specific outcomes from the value indicators provided. Do not include a specific price unless one was provided.",
+        "Next Steps": "Specific, low-friction call to action. Single clear action the client can take today.",
+        "Follow-Up Message": f"A follow-up email template the user can send after delivering this proposal. Requirements:\n- Reference one specific insight from the proposal (e.g., a finding from the situation analysis or a specific deliverable)\n- Suggest a concrete next action tied to the proposed engagement (e.g., a diagnostic workshop, a call to discuss a specific deliverable, not a generic \"let's discuss\")\n- Keep it under 150 words\n- Match the {tone} tone\n- Include [Client Name], [Date], [Your Name] placeholders\n- Do not use \"I hope this finds you well\" or similar boilerplate openings",
+    }
+
+    # Build only the selected sections
+    selected_blocks = []
+    for s in sections:
+        if s in section_templates:
+            selected_blocks.append(f"## {s}\n{section_templates[s]}")
+
+    section_format_block = "\n\n".join(selected_blocks)
 
     system_prompt = f"""You are a {industry} proposal strategist. {tone_instruction}
 
@@ -58,44 +73,16 @@ INDUSTRY CONTEXT:
 PROPOSAL TYPE: {proposal_type}
 
 STRUCTURAL RULES (mandatory):
-1. CREDIBILITY BLOCK: Open with a brief statement anchoring this proposal in proven methodology or relevant expertise. Do not fabricate client names or case studies.
+1. CREDIBILITY BLOCK: Open with a brief statement anchoring this proposal in the sender's specific credentials provided. If credentials were provided, use them directly. If not, anchor in the sender's firm name and industry expertise. Reference the sender by name. Do not fabricate client names or case studies. Vary your opening sentence across generations. Do not use cliché phrases like "faces a critical juncture," "at a crossroads," or "in today's rapidly changing landscape." Lead with a specific observation about the client's situation.
 2. COST OF INACTION: Before presenting solutions, articulate what the client loses by maintaining the status quo. Use the operational symptoms provided. Be specific, not alarmist.
 3. STRUCTURED OFFER: Present the solution as a clearly defined scope. Specify deliverables, approach, and format. No vague descriptions.
 4. IMMEDIATE VALUE: Link the investment to observable near-term outcomes. Reference the value indicators where relevant.
 5. LOW-RISK NEXT STEP: End with a contained, low-friction call to action. Suggest a diagnostic, a call, or a phased first step. Create urgency without pressure.
 
 OUTPUT FORMAT:
-Generate exactly these sections with markdown headers (##):
+Generate exactly these sections with markdown headers (##). Only generate the sections listed below. Do not add extra sections.
 
-## Executive Summary
-2-3 paragraphs. First paragraph: Anchor in the client's specific situation and industry context — make them feel seen. Do not start with "This proposal outlines..." Start with what's at stake for them specifically. Second paragraph: Credibility anchor (methodology, relevant expertise). Third: Immediate value statement — what changes for them if they say yes.
-
-## Understanding Your Situation
-2-3 paragraphs. Frame current reality and cost of inaction. Use symptom language.
-
-## Proposed Solution
-Structured as: Objectives, Approach, Deliverables. Be specific. No vagueness.
-
-## Scope of Work
-Bulleted list. Clear boundaries. What's included and what's not.
-
-## Timeline
-Phased breakdown with durations. Link phases to deliverables.
-
-## Investment & Value Justification
-Frame cost as investment. Compare the investment against the cost of inaction using concrete logic (e.g., "If the client loses X deals, the cost of inaction exceeds this investment Y times over"). Connect to specific outcomes from the value indicators provided. Do not include a specific price unless one was provided.
-
-## Next Steps
-Specific, low-friction call to action. Single clear action the client can take today.
-
-## Follow-Up Message
-A follow-up email template the user can send after delivering this proposal. Requirements:
-- Reference one specific insight from the proposal (e.g., a finding from the situation analysis or a specific deliverable)
-- Suggest a concrete next action tied to the proposed engagement (e.g., a diagnostic workshop, a call to discuss a specific deliverable, not a generic "let's discuss")
-- Keep it under 150 words
-- Match the {tone} tone
-- Include [Client Name], [Date], [Your Name] placeholders
-- Do not use "I hope this finds you well" or similar boilerplate openings
+{section_format_block}
 
 CONSTRAINTS:
 - Do not invent numerical results, percentages, case studies, or historical facts.
@@ -107,11 +94,15 @@ CONSTRAINTS:
     return system_prompt
 
 
-def build_user_prompt(business_name, client_problem, deliverables, budget_range, timeline):
+def build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline):
     """
     Builds the user context prompt. Concise, fact-dense, no wasted tokens.
     """
-    user_prompt = f"""Client: {business_name if business_name else 'Client Organization'}
+    credential_line = f"Sender credentials: {sender_credentials}" if sender_credentials.strip() else "Sender credentials: Experienced consulting firm"
+
+    user_prompt = f"""Sender: {sender_name if sender_name else 'Consulting Firm'}
+{credential_line}
+Client: {client_name if client_name else 'Client Organization'}
 Problem: {client_problem if client_problem else 'Not specified — infer from industry context'}
 Deliverables: {deliverables if deliverables else 'Not specified — propose appropriate deliverables'}
 Budget: {budget_range}
@@ -164,13 +155,13 @@ def call_openrouter(system_prompt, user_prompt, model="google/gemini-2.0-flash-0
         return f"Connection error: {str(e)[:200]}"
 
 
-def generate_proposal(industry, proposal_type, tone, business_name,
-                      client_problem, deliverables, budget_range, timeline,
+def generate_proposal(industry, proposal_type, tone, sender_name, sender_credentials,
+                      client_name, client_problem, deliverables, budget_range, timeline,
                       model="google/gemini-2.0-flash-001", sections=None):
     """
     Main orchestrator. Builds prompts, calls AI, returns proposal text.
     """
     system_prompt = build_system_prompt(industry, proposal_type, tone, sections)
-    user_prompt = build_user_prompt(business_name, client_problem, deliverables, budget_range, timeline)
+    user_prompt = build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline)
     proposal = call_openrouter(system_prompt, user_prompt, model)
     return proposal

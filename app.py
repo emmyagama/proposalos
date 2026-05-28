@@ -187,6 +187,24 @@ st.markdown("""
         color: #5a5a5a;
     }
 
+    .cta-button {
+        display: inline-block;
+        background: #2a2a2a;
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-top: 0.75rem;
+        transition: background 0.2s;
+    }
+    .cta-button:hover {
+        background: #1a1a1a;
+        text-decoration: none;
+        color: white;
+    }
+
     /* Checkbox cards */
     .checkbox-card {
         background: #fafaf8;
@@ -215,8 +233,10 @@ if "proposalos" not in st.session_state:
         "industry": None,
         "proposal_type": None,
         "tone": "Executive",
+        "sender_name": "",              # NEW
+        "sender_credentials": "",       # NEW
+        "client_name": "",              # RENAMED from business_name
         "client_problem": "",
-        "business_name": "",
         "deliverables": [],
         "custom_deliverables": "",
         "budget_range": None,
@@ -335,20 +355,37 @@ def render_screen_1():
 
 def render_screen_2():
     # Back link
-    
     if st.button("← Back", key="back_from_2"):
         state["current_screen"] = 1
         st.rerun()
 
-    st.markdown("### Tell us about the client situation")
+    st.markdown("### Who is sending this proposal?")
 
-    # Business name
-    business_name = st.text_input(
+    col1, col2 = st.columns(2)
+    with col1:
+        sender_name = st.text_input(
+            "Your firm name",
+            value=state["sender_name"],
+            placeholder="e.g., Sterling Consulting, Adeola & Co.",
+        )
+        state["sender_name"] = sender_name
+    with col2:
+        sender_credentials = st.text_input(
+            "Brief credentials (optional)",
+            value=state["sender_credentials"],
+            placeholder="e.g., 12 years in financial services strategy",
+        )
+        state["sender_credentials"] = sender_credentials
+
+    st.markdown("---")
+    st.markdown("### Who is the proposal for?")
+
+    client_name = st.text_input(
         "Client or business name",
-        value=state["business_name"],
-        placeholder="e.g., Sterling Consulting, Zenith Bank HR Division",
+        value=state["client_name"],
+        placeholder="e.g., Zenith Bank HR Division, Dangote Group Procurement",
     )
-    state["business_name"] = business_name
+    state["client_name"] = client_name
 
     # Client problem
     st.markdown("### What's happening in their business?")
@@ -382,8 +419,10 @@ def render_screen_2():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("Continue →", key="continue_2", type="primary", use_container_width=True):
-            if not state["business_name"].strip():
-                st.error("Please enter a client or business name.")
+            if not state["sender_name"].strip():
+                st.error("Please enter your firm name.")
+            elif not state["client_name"].strip():
+                st.error("Please enter a client name.")
             elif not state["client_problem"].strip():
                 st.error("Please describe the client's situation.")
             else:
@@ -552,7 +591,9 @@ def render_screen_5():
     industry=state["industry"],
     proposal_type=state["proposal_type"],
     tone=state["tone"],
-    business_name=state["business_name"],
+    sender_name=state["sender_name"],          # NEW
+    sender_credentials=state["sender_credentials"],  # NEW
+    client_name=state["client_name"],           # RENAMED
     client_problem=state["client_problem"],
     deliverables=deliverables_str,
     budget_range=state["budget_range"],
@@ -566,7 +607,7 @@ def render_screen_5():
     # Success header
     st.markdown("### Your proposal is ready")
     st.markdown(
-        f'<p style="color:#8b8b8b;">Prepared for: {state["business_name"]}</p>',
+        f'<p style="color:#8b8b8b;">Prepared for: {state["client_name"]}</p>',
         unsafe_allow_html=True,
     )
 
@@ -576,13 +617,14 @@ def render_screen_5():
         try:
             pdf_bytes = generate_pdf(
     state["proposal_text"],
-    state["business_name"],
-    state["proposal_type"]
+    state["client_name"],
+    state["proposal_type"],
+    state["sender_name"]
 )
             st.download_button(
                 label="📥 Download PDF",
                 data=pdf_bytes,
-                file_name=f"Proposal_{state['business_name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                file_name=f"Proposal_{state['client_name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
                 use_container_width=True,
             )
@@ -627,13 +669,22 @@ def render_screen_5():
 
     # CTA
     st.markdown("""
-    <div class="cta-box">
-        <h4>Want a customized proposal workflow for your firm?</h4>
-        <p>We help consulting and service firms build repeatable proposal engines 
-        and client acquisition systems. 
-        <a href="mailto:hello@proposalos.com">Get in touch</a> to discuss.</p>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="cta-box">
+    <h4>Want proposals that consistently win higher-value clients?</h4>
+    <p>
+    ProposalOS is only the starting point.
+    We help consulting and service firms improve proposal positioning,
+    pricing communication, client workflows, and operational delivery systems.
+    </p>
+    <p>
+    Book a free proposal review session to identify gaps, strengthen positioning,
+    and improve how your firm converts opportunities into revenue.
+    </p>
+    <a href="https://calendar.app.google/2B5LnxjDK7H18gzx5" target="_blank" class="cta-button">
+        Book Free Proposal Review
+    </a>
+</div>
+""", unsafe_allow_html=True)
 
 
 # =============================================================================
