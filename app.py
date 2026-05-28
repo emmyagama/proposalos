@@ -726,7 +726,6 @@ if state["current_screen"] < 5:
         '<p class="subtitle">Structured proposal intelligence for consulting and service firms.</p>',
         unsafe_allow_html=True,
     )
-    render_progress(state["current_screen"])
     st.markdown("<hr>", unsafe_allow_html=True)
 
 # Route to current screen
@@ -741,6 +740,5 @@ elif state["current_screen"] == 4:
 elif state["current_screen"] == 5:
     # Clean header for output screen
     st.title("ProposalOS")
-    render_progress(state["current_screen"])
     st.markdown("<hr>", unsafe_allow_html=True)
     render_screen_5()
