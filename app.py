@@ -243,11 +243,50 @@ st.markdown("""
         /* Hide Streamlit footer */
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    }
 
-        /* Force columns to stay horizontal on mobile */
-    [data-testid="stHorizontalBlock"] {
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
+        /* Progress indicator — scoped to ProposalOS only */
+    .ps-progress {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1.5rem 0 2rem 0;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .ps-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 40px;
+        flex-shrink: 0;
+    }
+    .ps-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #e0dcd5;
+        margin-bottom: 4px;
+    }
+    .ps-dot.active {
+        background: #8B7355;
+    }
+    .ps-dot.done {
+        background: #6b5a45;
+    }
+    .ps-label {
+        font-size: 0.6rem;
+        color: #b0b0b0;
+        white-space: nowrap;
+        font-family: Inter, -apple-system, sans-serif;
+    }
+    .ps-step:has(.ps-dot.active) .ps-label {
+        color: #1a1a1a;
+        font-weight: 500;
+    }
+    .ps-step:has(.ps-dot.done) .ps-label {
+        color: #6b5a45;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -285,31 +324,20 @@ state = st.session_state.proposalos
 # =============================================================================
 
 def render_progress(current):
-    """Renders the 5-dot progress indicator."""
+    """Renders the 5-dot progress indicator. Stays horizontal on all screens."""
     labels = ["Context", "Situation", "Engagement", "Review", "Output"]
     
-    cols = st.columns(5, gap="small")
+    dots_html = ""
+    for i, label in enumerate(labels, 1):
+        if i < current:
+            dot_class = "done"
+        elif i == current:
+            dot_class = "active"
+        else:
+            dot_class = ""
+        dots_html += f'<div class="ps-step"><div class="ps-dot {dot_class}"></div><span class="ps-label">{label}</span></div>'
     
-    for i, (col, label) in enumerate(zip(cols, labels), 1):
-        with col:
-            if i < current:
-                dot_color = "#6b5a45"
-                text_color = "#6b5a45"
-            elif i == current:
-                dot_color = "#8B7355"
-                text_color = "#1a1a1a"
-            else:
-                dot_color = "#e0dcd5"
-                text_color = "#b0b0b0"
-            
-            st.markdown(
-                f'<div style="text-align:center;">'
-                f'<div style="width:10px;height:10px;border-radius:50%;background:{dot_color};margin:0 auto 5px auto;"></div>'
-                f'<span style="font-size:0.65rem;color:{text_color};white-space:nowrap;">{label}</span>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-
+    st.markdown(f'<div class="ps-progress">{dots_html}</div>', unsafe_allow_html=True)
 
 # =============================================================================
 # SCREEN 1: Context Setup
