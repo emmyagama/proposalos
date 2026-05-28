@@ -146,24 +146,39 @@ st.markdown("""
         border-color: #1a1a1a;
     }
 
-    /* Progress indicator */
-    .progress-dots {
+        /* Progress indicator — horizontal on all screens */
+    .progress-container {
         display: flex;
         justify-content: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
         margin: 1.5rem 0 2rem 0;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 44px;
+        flex-shrink: 0;
     }
     .progress-dot {
         width: 10px;
         height: 10px;
         border-radius: 50%;
         background: #e0dcd5;
+        margin-bottom: 4px;
     }
     .progress-dot.active {
         background: #8B7355;
     }
     .progress-dot.done {
         background: #6b5a45;
+    }
+    .progress-label {
+        font-size: 0.65rem;
+        color: #8b8b8b;
+        white-space: nowrap;
     }
 
     /* Output container */
@@ -264,25 +279,28 @@ state = st.session_state.proposalos
 # =============================================================================
 
 def render_progress(current):
-    """Renders the 5-dot progress indicator."""
+    """Renders the 5-dot progress indicator. Stays horizontal on mobile."""
     labels = ["Context", "Situation", "Engagement", "Review", "Output"]
-    cols = st.columns(5, gap="small")
-    for i, (col, label) in enumerate(zip(cols, labels), 1):
-        with col:
-            if i < current:
-                dot_class = "done"
-            elif i == current:
-                dot_class = "active"
-            else:
-                dot_class = ""
-            st.markdown(
-                f'<div style="text-align:center;">'
-                f'<div class="progress-dot {dot_class}" '
-                f'style="margin:0 auto 4px auto;"></div>'
-                f'<span style="font-size:0.7rem;color:#8b8b8b;">{label}</span>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+    
+    dots_html = ""
+    for i, label in enumerate(labels, 1):
+        if i < current:
+            dot_class = "done"
+        elif i == current:
+            dot_class = "active"
+        else:
+            dot_class = ""
+        dots_html += f"""
+        <div class="progress-step">
+            <div class="progress-dot {dot_class}"></div>
+            <span class="progress-label">{label}</span>
+        </div>"""
+
+    st.markdown(f"""
+    <div class="progress-container">
+        {dots_html}
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # =============================================================================
