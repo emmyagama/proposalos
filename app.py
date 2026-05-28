@@ -171,8 +171,7 @@ st.markdown("""
         margin-bottom: 0;
         color: #5a5a5a;
     }
-
-        .cta-button {
+    .cta-button {
         display: inline-block;
         background: #8B1A1A;
         color: #FFFFFF;
