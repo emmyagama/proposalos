@@ -114,74 +114,66 @@ Generate the complete proposal following all structural rules and format specifi
 
 import time
 
-def call_gemini(system_prompt, user_prompt):
-    """
-    Calls Google AI Studio Gemini API (free tier).
-    Tries Gemini 3.5 Flash first. If the server is overloaded (503),
-    it automatically falls back to Gemini 2.5 Flash to guarantee a response.
-    """
+def call_gemini(system_prompt, user_prompt, status_ui):
     from google import genai
     from google.genai import types
+    import time
 
-    # 1. Define your fallback priority array (Best model first)
-    models_to_try = [
-        "gemini-3.5-flash", 
-        "gemini-2.5-flash"
-    ]
-
-    # 2. Initialize the master client
+    models_to_try = ["gemini-3.5-flash", "gemini-2.5-flash"]
+    
     try:
         client = genai.Client()
-        
         config = types.GenerateContentConfig(
             system_instruction=system_prompt,
             temperature=0.7,
-            max_output_tokens=8000, # Expanded ceiling for full proposals
+            max_output_tokens=8000,
             top_p=0.9,
         )
 
-        # 3. Loop through the fallback array
         for model_name in models_to_try:
-            # Give each model 2 quick retry attempts for minor blips
+            # Dynamically update UI based on which model is spinning up!
+            if model_name == "gemini-3.5-flash":
+                status_ui.markdown(
+                    '<div style="text-align:center;padding:2rem 0;">'
+                    '<p style="font-size:1.1rem;color:#1a1a1a;margin-bottom:0.5rem;">Structuring your proposal...</p>'
+                    '<p style="font-size:0.85rem;color:#8b8b8b;">Building an executive narrative</p>'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+            elif model_name == "gemini-2.5-flash":
+                status_ui.markdown(
+                    '<div style="text-align:center;padding:2rem 0;">'
+                    '<p style="font-size:1.1rem;color:#d97706;margin-bottom:0.5rem;">Optimizing structural alignment...</p>'
+                    '<p style="font-size:0.85rem;color:#8b8b8b;">Ensuring consulting-grade quality (Second Pass)</p>'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
+
             for attempt in range(2): 
                 try:
                     response = client.models.generate_content(
-                        model=model_name,
-                        contents=user_prompt,
-                        config=config
+                        model=model_name, contents=user_prompt, config=config
                     )
-                    return response.text # Success! Return text immediately
+                    return response.text
 
                 except Exception as e:
-                    error_msg = str(e)
-                    
-                    # If it's a 503 error, try a quick retry before giving up on this model
-                    if "503" in error_msg and attempt == 0:
-                        time.sleep(2) # Pause for 2 seconds
-                        continue # Try the same model one more time
-                    
-                    # If it's still failing with a 503, break the inner loop 
-                    # and let the outer loop try the next model in the array
-                    if "503" in error_msg:
-                        break 
-                        
-                    # If it's a different error (like a bad prompt or invalid API key), 
-                    # fail immediately instead of looping endlessly
-                    return f"API Error: {error_msg[:300]}"
+                    if "503" in str(e):
+                        if attempt == 0:
+                            time.sleep(2)
+                            continue
+                        break # Step down to 2.5 Flash
+                    return f"API Error: {str(e)[:300]}"
 
-        # If the code reaches this point, all models in the array failed
-        return "API Error: All available Gemini models are currently experiencing high demand. Please try again in a few minutes."
-
+        return "API Error: All Gemini engine lines are heavily loaded right now."
     except Exception as e:
         return f"Initialization Error: {str(e)[:300]}"
 
 def generate_proposal(industry, proposal_type, tone, sender_name, sender_credentials,
-                      client_name, client_problem, deliverables, budget_range, timeline,
-                      model="google/gemini-2.5-flash-001", sections=None):
-    """
-    Main orchestrator. Builds prompts, calls AI, returns proposal text.
-    """
+                      client_name, client_problem, deliverables, budget_range, timeline, sections, status_ui):
+
     system_prompt = build_system_prompt(industry, proposal_type, tone, sections)
     user_prompt = build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline)
-    proposal = call_gemini(system_prompt, user_prompt)
+    
+    # Pass the UI controller down to the network call
+    proposal = call_gemini(system_prompt, user_prompt, status_ui)
     return proposal

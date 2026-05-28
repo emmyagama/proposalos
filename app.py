@@ -172,10 +172,10 @@ st.markdown("""
         color: #5a5a5a;
     }
 
-    .cta-button {
+        .cta-button {
         display: inline-block;
-        background: #2a2a2a;
-        color: white;
+        background: #8B1A1A;
+        color: #FFFFFF;
         padding: 0.7rem 1.5rem;
         border-radius: 8px;
         text-decoration: none;
@@ -185,9 +185,9 @@ st.markdown("""
         transition: background 0.2s;
     }
     .cta-button:hover {
-        background: #1a1a1a;
+        background: #6B1414;
         text-decoration: none;
-        color: white;
+        color: #FFFFFF;
     }
 
     /* Checkbox cards */
@@ -608,28 +608,53 @@ def render_screen_4():
 def render_screen_5():
     # If not yet generated, run generation
     if not state["generation_complete"]:
-        with st.spinner("Crafting your proposal... This takes 10–20 seconds."):
-            # Prepare deliverables string
-            all_deliverables = state["deliverables"].copy()
-            if state["custom_deliverables"].strip():
-                all_deliverables.append(state["custom_deliverables"].strip())
-            deliverables_str = ", ".join(all_deliverables) if all_deliverables else ""
-
-            proposal = generate_proposal(
-    industry=state["industry"],
-    proposal_type=state["proposal_type"],
-    tone=state["tone"],
-    sender_name=state["sender_name"],          # NEW
-    sender_credentials=state["sender_credentials"],  # NEW
-    client_name=state["client_name"],           # RENAMED
-    client_problem=state["client_problem"],
-    deliverables=deliverables_str,
-    budget_range=state["budget_range"],
-    timeline=state["timeline"],
-    sections=state["selected_sections"],  # ← pass selected sections
-)
-            state["proposal_text"] = proposal
-            state["generation_complete"] = True
+        status_placeholder = st.empty()
+        
+        # 1. Start with the initial analysis message
+        status_placeholder.markdown(
+            '<div style="text-align:center;padding:2rem 0;">'
+            '<p style="font-size:1.1rem;color:#1a1a1a;margin-bottom:0.5rem;">Analyzing your inputs...</p>'
+            '<p style="font-size:0.85rem;color:#8b8b8b;">Mapping industry language and client context</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        
+        # Prepare deliverables string
+        all_deliverables = state["deliverables"].copy()
+        if state["custom_deliverables"].strip():
+            all_deliverables.append(state["custom_deliverables"].strip())
+        deliverables_str = ", ".join(all_deliverables) if all_deliverables else ""
+        
+        # 2. Pass the status_placeholder into generate_proposal as a parameter
+        proposal = generate_proposal(
+            industry=state["industry"],
+            proposal_type=state["proposal_type"],
+            tone=state["tone"],
+            sender_name=state["sender_name"],
+            sender_credentials=state["sender_credentials"],
+            client_name=state["client_name"],
+            client_problem=state["client_problem"],
+            deliverables=deliverables_str,
+            budget_range=state["budget_range"],
+            timeline=state["timeline"],
+            sections=state["selected_sections"],
+            status_ui=status_placeholder, # ← ADD THIS PARAMETER
+        )
+        
+        # 3. Final step after text is generated
+        status_placeholder.markdown(
+            '<div style="text-align:center;padding:2rem 0;">'
+            '<p style="font-size:1.1rem;color:#1a1a1a;margin-bottom:0.5rem;">Formatting your document...</p>'
+            '<p style="font-size:0.85rem;color:#8b8b8b;">Preparing PDF and final output</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        import time
+        time.sleep(1) # Brief pause so they can read the formatting step
+        
+        state["proposal_text"] = proposal
+        state["generation_complete"] = True
+        status_placeholder.empty()
         st.rerun()
 
     # Success header
