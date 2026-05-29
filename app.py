@@ -38,6 +38,12 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+            /* 1. Remove Streamlit's branding and menus */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stDecoration"] {display: none;}
+
     /* Typography */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
