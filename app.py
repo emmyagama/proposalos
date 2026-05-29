@@ -47,10 +47,18 @@ st.markdown("""
     header, 
     footer, 
     .stAppDeployButton,
-    #MainMenu {
+    #MainMenu,
+    /* Target the Community Cloud profile avatar, crown, and action bars */
+    [class*="viewerBadge"],
+    [class*="embeddedAppMetaInfoBar"],
+    div[class^="StyledAppViewBlockContainer"] ~ div,
+    iframe[title="streamlitEmbed"] ~ div {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
+        width: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     /* Typography */
