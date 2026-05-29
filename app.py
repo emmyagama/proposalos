@@ -38,15 +38,22 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-            /* 1. Remove Streamlit's branding and menus */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    [data-testid="stDecoration"] {display: none;}
-
-    /* Typography */
+    /* 1. CSS Imports MUST be at the very top */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+    /* 2. Heavy-duty Modern Streamlit Branding Overrides */
+    [data-testid="stHeader"], 
+    [data-testid="stDecoration"], 
+    header, 
+    footer, 
+    .stAppDeployButton,
+    #MainMenu {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+    }
+
+    /* Typography */
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -209,13 +216,9 @@ st.markdown("""
         border-color: #e8e5e0;
         margin: 1.5rem 0;
     }
-            
-        /* Hide Streamlit footer */
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    }
 
-        /* Progress indicator — scoped to ProposalOS only */
+    /* Progress indicator — scoped to ProposalOS only */
+    /* FIXED: Broken dangling curly bracket removed from right above this rule */
     .ps-progress {
         display: flex;
         justify-content: center;
