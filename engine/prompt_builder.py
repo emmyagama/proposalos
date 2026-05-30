@@ -9,11 +9,13 @@ import requests
 import streamlit as st
 from config.language_registry import LANGUAGE_REGISTRY
 
+import random
 
 def build_system_prompt(industry, proposal_type, tone, sections=None):
     """
-    Builds a compressed system prompt optimized for smaller models.
-    Uses instruction-dense language, minimal explanation, tight formatting rules.
+    Builds a system prompt optimized for natural, human-sounding output.
+    Retains dynamic section toggling for Screen 4 compatibility and 
+    uses high-actionability style directives for Gemini 3.5 Flash.
     """
     lang = LANGUAGE_REGISTRY.get(industry, LANGUAGE_REGISTRY["Business Services"])
 
@@ -24,16 +26,17 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
     outcome_terms = random.sample(lang["outcome_language"], min(3, len(lang["outcome_language"])))
     markers = random.sample(lang["value_markers"], min(3, len(lang["value_markers"])))
 
-        # Tone instruction mapping with fallback
+    # High-impact tone instruction mapping
     tone_instructions = {
-        "Executive": "Write with confident authority. Concise sentences. Direct recommendations. No hedging.",
-        "Formal": "Write with structured precision. Proper business English. Reserved and professional tone.",
-        "Persuasive": "Write with conviction. Lead with value. Frame everything around outcomes and urgency.",
-        "Technical": "Write with analytical depth. Use precise terminology. Emphasize methodology and process."
+        "Executive": "Confident and direct. Short sentences for key claims. Longer sentences for context. Lead with outcomes.",
+        "Formal": "Structured and precise. Professional register without stiffness. Vary sentence length naturally.",
+        "Persuasive": "Conviction without hype. Lead with value. Frame problems as opportunities. Use concrete examples.",
+        "Technical": "Analytical depth with accessible language. Use precise terms but explain them through observable symptoms.",
+        "Concise": "One page maximum. Bullet-heavy. Every sentence must earn its place. No explanatory prose. Critical details only.",
     }
-    tone_instruction = tone_instructions.get(tone, "Write with confident authority. Concise sentences. Direct recommendations.")
+    tone_instruction = tone_instructions.get(tone, tone_instructions['Executive'])
 
-    # Dynamic section list for OUTPUT FORMAT
+    # Maintain the dynamic section list fallback for Screen 4
     if sections is None:
         sections = [
             "Executive Summary", "Understanding Your Situation",
@@ -41,19 +44,19 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
             "Investment & Value Justification", "Next Steps", "Follow-Up Message"
         ]
 
-    # Full instructions for each section type
+    # Clean, distinct modular section definitions
     section_templates = {
-        "Executive Summary": "2-3 paragraphs. First paragraph: Anchor in the client's specific situation and industry context — make them feel seen. Do not start with \"This proposal outlines...\" Start with what's at stake for them specifically. Second paragraph: Credibility anchor (methodology, relevant expertise). Third: Immediate value statement — what changes for them if they say yes.",
-        "Understanding Your Situation": "2-3 paragraphs. Frame current reality and cost of inaction. Use symptom language.",
-        "Proposed Solution": "Structured as: Objectives, Approach, Deliverables. Be specific. No vagueness.",
-        "Scope of Work": "Bulleted list. Clear boundaries. What's included and what's not.",
+        "Executive Summary": "2-3 paragraphs. Open with sender credibility. State the core problem and proposed outcome. Punchy close.",
+        "Understanding Your Situation": "2-3 paragraphs. Describe what's happening using concrete symptoms. Show what's at stake. Use the symptom language. Include one specific scenario or observation.",
+        "Proposed Solution": "Structured as: What we'll do, How we'll do it, What you'll receive. Be specific about deliverables. Avoid stacked jargon.",
+        "Scope of Work": "Bulleted list. Clear boundaries — what's included and what's not. Short phrases.",
         "Timeline": "Phased breakdown with durations. Link phases to deliverables.",
-        "Investment & Value Justification": "Frame cost as investment. Compare the investment against the cost of inaction using concrete logic (e.g., \"If the client loses X deals, the cost of inaction exceeds this investment Y times over\"). Connect to specific outcomes from the value indicators provided. Do not include a specific price unless one was provided.",
-        "Next Steps": "Specific, low-friction call to action. Single clear action the client can take today.",
-        "Follow-Up Message": f"A follow-up email template the user can send after delivering this proposal. Requirements:\n- Reference one specific insight from the proposal (e.g., a finding from the situation analysis or a specific deliverable)\n- Suggest a concrete next action tied to the proposed engagement (e.g., a diagnostic workshop, a call to discuss a specific deliverable, not a generic \"let's discuss\")\n- Keep it under 150 words\n- Match the {tone} tone\n- Include [Client Name], [Date], [Your Name] placeholders\n- Do not use \"I hope this finds you well\" or similar boilerplate openings",
+        "Investment & Value Justification": "Frame cost as investment. Connect to outcomes. Reference the cost of inaction. Do not include a specific price unless provided.",
+        "Next Steps": "One specific, low-friction action. One sentence.",
+        "Follow-Up Message": f"A short, natural follow-up the sender can use after delivering the proposal. Match the {tone} tone. Include placeholders like [Client Name] and [Date]. Sound like a person, not a template.",
     }
 
-    # Build only the selected sections
+    # Dynamically build only the user's checked sections
     selected_blocks = []
     for s in sections:
         if s in section_templates:
@@ -61,38 +64,44 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 
     section_format_block = "\n\n".join(selected_blocks)
 
-    system_prompt = f"""You are a {industry} proposal strategist. {tone_instruction}
+    # Combined master prompt string
+    system_prompt = f"""You are a {industry} professional writing a corporate business proposal. {tone_instruction}
 
-INDUSTRY CONTEXT:
-- Problem domain: {', '.join(problem_terms)}
+INDUSTRY LANGUAGE DESCRIPTIONS:
+- Problems: {', '.join(problem_terms)}
 - Observable symptoms: {', '.join(symptoms)}
-- Solution approaches: {', '.join(solution_terms)}
-- Target outcomes: {', '.join(outcome_terms)}
+- Solutions: {', '.join(solution_terms)}
+- Outcomes: {', '.join(outcome_terms)}
 - Value indicators: {', '.join(markers)}
 
 PROPOSAL TYPE: {proposal_type}
 
-STRUCTURAL RULES (mandatory):
-1. CREDIBILITY BLOCK: Open with a brief statement anchoring this proposal in the sender's specific credentials provided. If credentials were provided, use them directly. If not, anchor in the sender's firm name and industry expertise. Reference the sender by name. Do not fabricate client names or case studies. Vary your opening sentence across generations. Do not use cliché phrases like "faces a critical juncture," "at a crossroads," or "in today's rapidly changing landscape." Lead with a specific observation about the client's situation.
-2. COST OF INACTION: Before presenting solutions, articulate what the client loses by maintaining the status quo. Use the operational symptoms provided. Be specific, not alarmist.
-3. STRUCTURED OFFER: Present the solution as a clearly defined scope. Specify deliverables, approach, and format. No vague descriptions.
-4. IMMEDIATE VALUE: Link the investment to observable near-term outcomes. Reference the value indicators where relevant.
-5. LOW-RISK NEXT STEP: End with a contained, low-friction call to action. Suggest a diagnostic, a call, or a phased first step. Create urgency without pressure.
+HUMAN WRITING RULES (mandatory style overrides):
+- SENTENCE VARIANCE: Purposely alternate your syntax. Mix short, hard-hitting declarative sentences (under 8 words) with longer, multi-clause strategic context sentences. Avoid uniform sentence length.
+- LOCAL REALISM: Never use placeholder statements or abstract filler. Pick exactly one or two explicit operational realities from the symptoms list and write a deep, 2-sentence diagnostic scenario showing what that breakdown looks like on the operational floor.
+- STRATEGIC REGISTERS: Match your linguistic density to the document stage. Keep the Executive Summary punchy and outcome-obsessed; switch the Problem Framing into objective, operational terminology; ensure the Solution reads with architectural confidence.
+- APPLIED JARGON REVERSION: Actively downgrade common AI business clichés to direct English phrases (e.g., replace "optimize visibility" with "make it easier to track"; replace "leverage synergy" with "work together across departments").
 
-OUTPUT FORMAT:
-Generate exactly these sections with markdown headers (##). Only generate the sections listed below. Do not add extra sections.
+STRUCTURAL RULES:
+1. CREDIBILITY BLOCK: Open by anchoring in the sender's specific credentials. Reference the sender by name. One sentence. Do not fabricate client names or case studies.
+2. COST OF INACTION: Before solutions, show what the client loses by maintaining the status quo. Use specific observable symptoms, not abstract risk categories.
+3. STRUCTURED OFFER: Present the solution with clear deliverables and approach. Be specific about what changes and how.
+4. IMMEDIATE VALUE: Link the investment to near-term observable outcomes. Reference value indicators.
+5. LOW-RISK NEXT STEP: End with a contained, specific next action. One sentence.
+
+OUTPUT FORMAT — generate exactly these sections with markdown headers (##):
+Only generate the sections listed below. Do not add extra sections.
 
 {section_format_block}
 
 CONSTRAINTS:
 - Do not invent numerical results, percentages, case studies, or historical facts.
 - Do not fabricate client names, project references, or past engagements.
-- If context is missing, state reasonable assumptions explicitly (e.g., "Assuming a mid-sized team...").
+- If context is missing, state reasonable assumptions explicitly.
 - No marketing fluff. No buzzwords without substance. No emojis.
-- Output must be complete, not truncated.
+- Output must be complete and formatted entirely in Markdown text.
 """
     return system_prompt
-
 
 def build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline):
     """

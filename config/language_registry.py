@@ -325,5 +325,6 @@ PROPOSAL_TONES = [
     "Executive",
     "Formal",
     "Persuasive",
-    "Technical"
+    "Technical",
+    "Concise"
 ]
