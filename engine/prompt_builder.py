@@ -131,21 +131,23 @@ def call_gemini(system_prompt, user_prompt, status_ui):
     models_to_try = ["gemini-3.5-flash", "gemini-2.5-flash"]
     
     try:
+        # 1. Initialize client ONCE at the parent level
         client = genai.Client()
+        
+        # 2. Configure model global token limits and temperature
         config = types.GenerateContentConfig(
-            system_instruction=system_prompt,
             temperature=0.7,
             max_output_tokens=8000,
             top_p=0.9,
         )
 
         for model_name in models_to_try:
-            # Dynamically update UI based on which model is spinning up!
+            # Dynamically update UI based on which model is spinning up
             if model_name == "gemini-3.5-flash":
                 status_ui.markdown(
                     '<div style="text-align:center;padding:2rem 0;">'
                     '<p style="font-size:1.1rem;color:#1a1a1a;margin-bottom:0.5rem;">Structuring your proposal...</p>'
-                    '<p style="font-size:0.85rem;color:#8b8b8b;">Building an executive narrative</p>'
+                    '<p style="font-size:0.85rem;color:#8b8b8b;">Building an executive narrative with Gemini 3.5</p>'
                     '</div>',
                     unsafe_allow_html=True,
                 )
@@ -160,8 +162,14 @@ def call_gemini(system_prompt, user_prompt, status_ui):
 
             for attempt in range(2): 
                 try:
+                    # 3. Force system/user instructions structural separation explicitly inside contents
                     response = client.models.generate_content(
-                        model=model_name, contents=user_prompt, config=config
+                        model=model_name,
+                        contents=[
+                            {"role": "system", "parts": [{"text": system_prompt}]},
+                            {"role": "user", "parts": [{"text": user_prompt}]}
+                        ],
+                        config=config
                     )
                     return response.text
 
@@ -170,7 +178,7 @@ def call_gemini(system_prompt, user_prompt, status_ui):
                         if attempt == 0:
                             time.sleep(2)
                             continue
-                        break # Step down to 2.5 Flash
+                        break  # Step down to 2.5 Flash
                     return f"API Error: {str(e)[:300]}"
 
         return "API Error: All Gemini engine lines are heavily loaded right now."

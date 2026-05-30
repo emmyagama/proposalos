@@ -37,6 +37,7 @@ def parse_markdown_to_html(proposal_text):
                 f"<li>{clean_inline_markdown(item)}</li>"
                 for item in current_bullets
             )
+            # Add an explicit layout container class to prevent orphan lists
             html_blocks.append(f'<ul class="bullet-list">\n{items}\n</ul>')
             current_bullets = []
 
@@ -69,10 +70,13 @@ def parse_markdown_to_html(proposal_text):
         if stripped.startswith("### "):
             flush_bullets()
             title = stripped.replace("### ", "").strip()
+            # Clean up potential inline formatting inside subheaders
+            title = clean_inline_markdown(title)
             html_blocks.append(f'<div class="subheader">{title}</div>')
             continue
 
         # Bullet points: - text or * text
+        # FIX: Ensure it matches exactly a bullet followed by a space
         if stripped.startswith("- ") or stripped.startswith("* "):
             bullet_text = stripped[2:].strip()
             current_bullets.append(bullet_text)
@@ -87,7 +91,7 @@ def parse_markdown_to_html(proposal_text):
 
         # Regular body text
         flush_bullets()
-        html_blocks.append(f'<p class="body-text">{stripped}</p>')
+        html_blocks.append(f'<p class="body-text">{clean_inline_markdown(stripped)}</p>')
 
     flush_bullets()
     return "\n".join(html_blocks)
@@ -95,12 +99,13 @@ def parse_markdown_to_html(proposal_text):
 
 def clean_inline_markdown(text):
     """
-    Strips inline Markdown formatting that doesn't translate to PDF.
-    Removes **bold** markers — the body-text CSS handles weight.
-    Removes *italic* markers.
+    Transforms inline Markdown formatting into clean HTML elements 
+    so that WeasyPrint can render bold and italic weights natively.
     """
-    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.+?)\*', r'\1', text)
+    # Convert markdown **bold** into HTML strong tags
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    # Convert markdown *italic* into HTML emphasis tags
+    text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
     return text
 
 
