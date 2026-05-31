@@ -48,11 +48,11 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 
     section_templates = {
         "Executive Summary": "2-3 paragraphs. Open with sender credibility. State the core problem and proposed outcome. Punchy close.",
-        "Understanding Your Situation": "2-3 paragraphs. Open by linking to the core recommendation. Describe what's happening using concrete symptoms. Show what's at stake. Use the symptom language. MUST include ONE concrete, observable example naming specific actors (e.g. 'corporate banking team', 'retail website team') and specific behaviors. Every observation should support a specific argument for change.",
+        "Understanding Your Situation": "2-3 paragraphs. Open by linking to the core recommendation. Describe what's happening using concrete symptoms. Show what's at stake. Use the symptom language. Include one expert observation about the type of problem being addressed; the observation should - explain why the problem commonly occurs, explain what organizations often misdiagnose, explain why the proposed methodology is appropriate; the observation must be based on general consulting experience. Do not invent facts about the client. Every observation should support a specific argument for change.",
         "Proposed Solution": "Open by restating the recommendation. Then structure as three supporting arguments: what we'll do, how we'll do it, what you'll receive. Each argument should connect to a specific problem from the previous section. Be specific about deliverables. Avoid stacked jargon.",
         "Scope of Work": "Bulleted list. Clear boundaries — what's included and what's not. Short phrases.",
         "Timeline": "Phased breakdown with durations. Link phases to deliverables.",
-        "Investment & Value Justification": "Frame cost as investment. Connect to outcomes. Reference the cost of inaction. Each value claim should tie back to an argument made in the Solution section.",
+        "Investment & Value Justification": "Frame cost as investment. Connect to outcomes. Reference the cost of inaction. Each value claim should tie back to an argument made in the Solution section. For diagnostic engagements, DO NOT promise business outcomes; Promise:, clarity, prioritization, risk visibility, decision support",
         "Next Steps": "One specific, low-friction action. One sentence.",
         "Follow-Up Message": f"Three sentences maximum. Sentence 1: Reference the attached proposal. Sentence 2: One-line value reminder. Sentence 3: Specific next step with date. Include [Client Name] and [Date] placeholders. Sound like a person following up, not a summary of the proposal.",
     }
@@ -72,13 +72,6 @@ HIGHEST PRIORITY RULES (Never violate these):
 - Every section MUST open with a positive, forward-looking statement about what is possible — not a critique of what the client is failing at."
 - PYRAMID STRUCTURE - Lead with the conclusion, then support it. The Executive Summary states the single core recommendation. Every subsequent section opens with a sentence that ties back to that recommendation. Group supporting arguments in sets of three where natural. When presenting data or observations, explicitly state which argument they support — do not leave evidence floating without context.
 - Anchor the opening with the sender's real credentials.
-
-**PROHIBITED** (Strictly avoid):
-- Opening devices: "Consider a typical scenario", "Picture this", "Imagine", "Let's be clear", "The hard truth is"
-- Sentence structure: The pattern "X is not Y; it is Z" or "not X but Y"
-- Adverbs: silently, simply, literally, virtually
-- Negative comments about client's talent, people, or culture (e.g. high turnover, poor hires, skill gaps) unless the client explicitly stated it in the input
-- Vague phrases: "marketing spend is wasted", "impacts the bottom line", "creates friction", "leads to inefficiency" — unless immediately followed by a specific mechanism (e.g. "...by [specific mechanism]")
 - Any claim about the client's current operations must be attributed to one of (use no more than two of these across the entire proposal): 
   • preliminary scoping conversations,
   • public information,
@@ -87,6 +80,13 @@ HIGHEST PRIORITY RULES (Never violate these):
   • Pending deeper analysis,
   • Initial indicators point to, or
   • We'll validate this during the diagnostic phase.
+
+**PROHIBITED** (Strictly avoid):
+- Opening devices: "Consider a typical scenario", "Picture this", "Imagine", "Let's be clear", "The hard truth is"
+- Sentence structure: The pattern "X is not Y; it is Z" or "not X but Y"
+- Adverbs: silently, simply, literally, virtually
+- Negative comments about client's talent, people, or culture (e.g. high turnover, poor hires, skill gaps) unless the client explicitly stated it in the input
+- Vague phrases: "marketing spend is wasted", "impacts the bottom line", "creates friction", "leads to inefficiency" — unless immediately followed by a specific mechanism (e.g. "...by [specific mechanism]")
 
 **HYPOTHESIS REQUIREMENT** (Mandatory - include exactly ONE):
 You must include exactly one clear hypothesis statement in either the Executive Summary or Proposed Solution section.
@@ -111,7 +111,7 @@ The hypothesis must be specific and falsifiable. Avoid generic statements like "
 
 **WRITING GUIDELINES**:
 - Vary sentence rhythm. After every long or complex sentence (20+ words), follow with a short one (under 10 words). Avoid three long sentences in a row. Avoid three short sentences in a row.
-- Be specific and concrete. Show operational reality instead of speaking in abstractions.
+- Keep the specific but highly concrete. Do not write like this: 'We need to optimize our digital ecosystem to enhance stakeholder engagement.' Write like this instead: 'We need to speed up our website to get more newsletter signups.'
 - Downgrade corporate jargon into plain English.
 - Match language density to the section (punchy in Executive Summary, more detailed in Solution).
 
