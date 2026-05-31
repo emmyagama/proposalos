@@ -25,7 +25,7 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 
     # ==================== TONE INSTRUCTIONS ====================
     tone_instructions = {
-        "Executive": "Write with sharp, confident, executive presence. Start with a bold, debatable claim. Use short, authoritative sentences. Be direct and high-signal.",
+        "Executive": "Write with sharp, confident, executive presence. Start with a bold, debatable claim. Use short, authoritative sentences. Be direct and high-signal. The first sentence of the Executive Summary MUST be a thematic, memorable statement about business value — not about what the client is doing wrong. Pattern: '[Business truth].' Then the second sentence introduces the client's specific situation.",
         
         "Formal": "Use professional, grammatically perfect language. No contractions. No sentence fragments. Clear, structured, and objective.",
         
@@ -69,6 +69,7 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 - Write like an experienced human consultant — natural, confident, and professional.
 - Never use these words: synergy, leverage, optimize, ecosystem, paradigm, we believe, we think.
 - Do not fabricate numbers, percentages, case studies, or client-specific historical facts.
+- Every section MUST open with a positive, forward-looking statement about what is possible — not a critique of what the client is failing at."
 - If using any number, prefix with "estimated", "approximately", or "preliminary indicators suggest" and add "Our diagnostic will confirm this."
 - Anchor the opening with the sender's real credentials.
 
@@ -79,9 +80,8 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 - Negative comments about client's talent, people, or culture (e.g. high turnover, poor hires, skill gaps) unless the client explicitly stated it in the input
 - Vague phrases: "marketing spend is wasted", "impacts the bottom line", "creates friction", "leads to inefficiency" — unless immediately followed by a specific mechanism (e.g. "...by [specific mechanism]")
 - Any claim about the client's current operations must be attributed to one of: 
-  • preliminary scoping conversations, 
-  • public information, or 
-  • "our diagnostic will measure/confirm this"
+  • preliminary scoping conversations, or
+  • public information,
 
 **HYPOTHESIS REQUIREMENT** (Mandatory - include exactly ONE):
 You must include exactly one clear hypothesis statement in either the Executive Summary or Proposed Solution section.
