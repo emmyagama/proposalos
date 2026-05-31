@@ -48,13 +48,13 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 
     section_templates = {
         "Executive Summary": "2-3 paragraphs. Open with sender credibility. State the core problem and proposed outcome. Punchy close.",
-        "Understanding Your Situation": "2-3 paragraphs. Describe what's happening using concrete symptoms. Show what's at stake. Use the symptom language. MUST include ONE concrete, observable example naming specific actors (e.g. 'corporate banking team', 'retail website team') and specific behaviors. If details are limited, use: 'Based on available information, a typical pattern looks like [placeholder]. Our diagnostic will replace this placeholder with actual findings.'",
-        "Proposed Solution": "Structured as: What we'll do, How we'll do it, What you'll receive. Be specific about deliverables. Avoid stacked jargon.",
+        "Understanding Your Situation": "2-3 paragraphs. Open by linking to the core recommendation. Describe what's happening using concrete symptoms. Show what's at stake. Use the symptom language. MUST include ONE concrete, observable example naming specific actors (e.g. 'corporate banking team', 'retail website team') and specific behaviors. Every observation should support a specific argument for change.",
+        "Proposed Solution": "Open by restating the recommendation. Then structure as three supporting arguments: what we'll do, how we'll do it, what you'll receive. Each argument should connect to a specific problem from the previous section. Be specific about deliverables. Avoid stacked jargon.",
         "Scope of Work": "Bulleted list. Clear boundaries — what's included and what's not. Short phrases.",
         "Timeline": "Phased breakdown with durations. Link phases to deliverables.",
-        "Investment & Value Justification": "Frame cost as investment. Connect to outcomes. Reference the cost of inaction. Do not include a specific price unless provided.",
+        "Investment & Value Justification": "Frame cost as investment. Connect to outcomes. Reference the cost of inaction. Each value claim should tie back to an argument made in the Solution section.",
         "Next Steps": "One specific, low-friction action. One sentence.",
-        "Follow-Up Message": f"A short, natural follow-up the sender can use after delivering the proposal. Match the {tone} tone. Include placeholders like [Client Name] and [Date]. Sound like a person, not a template.",
+        "Follow-Up Message": f"Three sentences maximum. Sentence 1: Reference the attached proposal. Sentence 2: One-line value reminder. Sentence 3: Specific next step with date. Include [Client Name] and [Date] placeholders. Sound like a person following up, not a summary of the proposal.",
     }
 
     selected_blocks = [f"## {s}\n{section_templates[s]}" for s in sections if s in section_templates]
@@ -65,12 +65,12 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 
     **PROPOSAL TYPE**: {proposal_type}
 
-**HIGHEST PRIORITY RULES** (Never violate these):
+HIGHEST PRIORITY RULES (Never violate these):
 - Write like an experienced human consultant — natural, confident, and professional.
 - Never use these words: synergy, leverage, optimize, ecosystem, paradigm, we believe, we think.
-- Do not fabricate numbers, percentages, case studies, or client-specific historical facts.
+- Do not invent numerical results, percentages, multipliers, salary figures, or historical facts. If citing an industry statistic, attribute it to its source or say "industry research suggests".
 - Every section MUST open with a positive, forward-looking statement about what is possible — not a critique of what the client is failing at."
-- If using any number, prefix with "estimated", "approximately", or "preliminary indicators suggest" and add "Our diagnostic will confirm this."
+- PYRAMID STRUCTURE - Lead with the conclusion, then support it. The Executive Summary states the single core recommendation. Every subsequent section opens with a sentence that ties back to that recommendation. Group supporting arguments in sets of three where natural. When presenting data or observations, explicitly state which argument they support — do not leave evidence floating without context.
 - Anchor the opening with the sender's real credentials.
 
 **PROHIBITED** (Strictly avoid):
@@ -79,9 +79,14 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
 - Adverbs: silently, simply, literally, virtually
 - Negative comments about client's talent, people, or culture (e.g. high turnover, poor hires, skill gaps) unless the client explicitly stated it in the input
 - Vague phrases: "marketing spend is wasted", "impacts the bottom line", "creates friction", "leads to inefficiency" — unless immediately followed by a specific mechanism (e.g. "...by [specific mechanism]")
-- Any claim about the client's current operations must be attributed to one of: 
-  • preliminary scoping conversations, or
+- Any claim about the client's current operations must be attributed to one of (use no more than two of these across the entire proposal): 
+  • preliminary scoping conversations,
   • public information,
+  • From initial discussions,
+  • Our early read suggests,
+  • Pending deeper analysis,
+  • Initial indicators point to, or
+  • We'll validate this during the diagnostic phase.
 
 **HYPOTHESIS REQUIREMENT** (Mandatory - include exactly ONE):
 You must include exactly one clear hypothesis statement in either the Executive Summary or Proposed Solution section.
@@ -105,7 +110,7 @@ The hypothesis must be specific and falsifiable. Avoid generic statements like "
 - Value indicators: {', '.join(markers)}
 
 **WRITING GUIDELINES**:
-- Vary sentence length: mix very short sentences (under 10 words) with longer strategic ones.
+- Vary sentence rhythm. After every long or complex sentence (20+ words), follow with a short one (under 10 words). Avoid three long sentences in a row. Avoid three short sentences in a row.
 - Be specific and concrete. Show operational reality instead of speaking in abstractions.
 - Downgrade corporate jargon into plain English.
 - Match language density to the section (punchy in Executive Summary, more detailed in Solution).
@@ -160,7 +165,7 @@ def call_gemini(system_prompt, user_prompt, status_ui):
         config = types.GenerateContentConfig(
             temperature=0.2,
             max_output_tokens=8000,
-            top_p=0.9,
+            top_p=0.8,
         )
 
         for model_name in models_to_try:
