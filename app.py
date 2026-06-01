@@ -625,7 +625,7 @@ def render_screen_5():
     # If not yet generated, run generation
     if not state["generation_complete"]:
     # 1. Initialize the placeholder container safely
-    status_placeholder = st.empty()
+        status_placeholder = st.empty()
     
     # 2. Render State 1: Analysis (This displays the animated loading circle natively via CSS)
     status_placeholder.markdown(
