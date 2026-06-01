@@ -33,7 +33,7 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
         
         "Technical": "Be precise and evidence-based. Tie every claim to observable operational effects. Define terms clearly. Avoid fluff and metaphors.",
         
-        "Concise": "Be extremely brief and high-signal. Cut every unnecessary word. Maximum clarity with minimal text."
+        "Concise": "One page maximum (400 - 500 words). Be extremely brief and high-signal. Cut every unnecessary word. Maximum clarity with minimal text."
     }
 
     tone_instruction = tone_instructions.get(tone, tone_instructions["Executive"])
