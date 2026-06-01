@@ -154,61 +154,153 @@ import time
 def call_gemini(system_prompt, user_prompt, status_ui):
     from google import genai
     from google.genai import types
+    import time
+    import streamlit as st
+    import re
 
-    models_to_try = ["gemini-3.5-flash", "gemini-2.5-flash"]
+    # Correct model names as of June 2026
+    # Note: gemini-2.0-flash was discontinued March 31, 2026
+    # Note: gemini-3-flash doesn't exist - correct name is gemini-3-flash-preview
+    models_to_try = [
+        "gemini-3.5-flash",      # Best quality, GA (May 2026)
+        "gemini-3-flash-preview", # Preview version, works but not GA
+        "gemini-2.5-flash",       # Stable fallback, GA
+        "gemini-2.5-flash-lite"   # Lightweight last resort, GA
+    ]
+    
+    # User-friendly status messages - never mention fallback or downgrade
+    status_messages = {
+        0: {  # gemini-3.5-flash
+            "main": "Processing your request...",
+            "sub": "Analyzing requirements and structuring content"
+        },
+        1: {  # gemini-3-flash-preview
+            "main": "Still working on your proposal...",
+            "sub": "This is taking a bit longer than expected"
+        },
+        2: {  # gemini-2.5-flash
+            "main": "Finalizing your document...",
+            "sub": "Almost there, performing quality checks"
+        },
+        3: {  # gemini-2.5-flash-lite
+            "main": "Completing your proposal...",
+            "sub": "Just a moment longer"
+        }
+    }
     
     try:
-        # 1. Initialize client ONCE at the parent level
         client = genai.Client()
         
-        # 2. Configure model global token limits and temperature
-        config = types.GenerateContentConfig(
-            temperature=0.2,
-            max_output_tokens=8000,
-            top_p=0.8,
-            system_instruction=system_prompt,
-        )
-
-        for model_name in models_to_try:
-            # Dynamically update UI based on which model is spinning up
-            if model_name == "gemini-3.5-flash":
-                status_ui.markdown(
-                    '<div style="text-align:center;padding:2rem 0;">'
-                    '<p style="font-size:1.1rem;color:#1a1a1a;margin-bottom:0.5rem;">Structuring your proposal...</p>'
-                    '<p style="font-size:0.85rem;color:#8b8b8b;">Building an executive narrative</p>'
-                    '</div>',
-                    unsafe_allow_html=True,
-                )
-            elif model_name == "gemini-2.5-flash":
-                status_ui.markdown(
-                    '<div style="text-align:center;padding:2rem 0;">'
-                    '<p style="font-size:1.1rem;color:#d97706;margin-bottom:0.5rem;">Optimizing structural alignment...</p>'
-                    '<p style="font-size:0.85rem;color:#8b8b8b;">Ensuring consulting-grade quality (Second Pass)</p>'
-                    '</div>',
-                    unsafe_allow_html=True,
-                )
-
-            for attempt in range(2): 
+        for model_idx, model_name in enumerate(models_to_try):
+            # Update UI with user-friendly message
+            msg = status_messages[model_idx]
+            status_ui.markdown(
+                f'<div style="text-align:center; padding:2rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0;">'
+                f'<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1rem auto; animation: spin 1s linear infinite;"></div>'
+                f'<p style="font-size:1.1rem; color:#1a1a1a;">{msg["main"]}</p>'
+                f'<p style="font-size:0.85rem; color:#8b8b8b;">{msg["sub"]}</p>'
+                f'</div>'
+                f'<style>@keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}</style>',
+                unsafe_allow_html=True,
+            )
+            
+            # Try this model with retries for transient errors
+            for attempt in range(2):
                 try:
-                
-                    response = client.models.generate_content(
+                    config = types.GenerateContentConfig(
+                        temperature=0.2,
+                        max_output_tokens=8000,
+                        top_p=0.8,
+                        system_instruction=system_prompt,
+                    )
+                    
+                    # Streaming setup for live preview
+                    text_placeholder = st.empty()
+                    full_response_text = ""
+                    word_count = 0
+                    
+                    response_stream = client.models.generate_content_stream(
                         model=model_name,
                         contents=user_prompt,
                         config=config
                     )
-                    return response.text
-
+                    
+                    for chunk in response_stream:
+                        if chunk.text:
+                            full_response_text += chunk.text
+                            word_count = len(full_response_text.split())
+                            
+                            # Update word count during generation
+                            status_ui.markdown(
+                                f'<div style="text-align:center; padding:2rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0;">'
+                                f'<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1rem auto; animation: spin 1s linear infinite;"></div>'
+                                f'<p style="font-size:1.1rem; color:#1a1a1a;">Writing your proposal... {word_count} words</p>'
+                                f'<p style="font-size:0.85rem; color:#8b8b8b;">This may take a moment</p>'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+                            
+                            # Live preview of generated content
+                            text_placeholder.markdown(
+                                f'<div style="background:#fdfdfc; border:1px solid #e8e5e0; border-radius:10px; padding:2rem; max-height:400px; overflow-y:auto;">'
+                                f'{full_response_text}'
+                                f'</div>',
+                                unsafe_allow_html=True
+                            )
+                    
+                    text_placeholder.empty()
+                    return full_response_text
+                    
                 except Exception as e:
-                    if "503" in str(e):
+                    error_str = str(e)
+                    
+                    # Quota exhaustion (429) - move to next model
+                    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                        time.sleep(1)
+                        break  # Move to next model
+                    
+                    # Model not found (404) - move to next model
+                    elif "404" in error_str and "not found" in error_str.lower():
+                        # This model doesn't exist or isn't supported
+                        break  # Silently move to next model
+                    
+                    # Server overload (503) - retry this model
+                    elif "503" in error_str:
                         if attempt == 0:
-                            time.sleep(2)
+                            # Parse retry delay if available
+                            match = re.search(r'retry in ([\d.]+)', error_str)
+                            wait_time = float(match.group(1)) + 1 if match else 3
+                            
+                            status_ui.markdown(
+                                f'<div style="text-align:center; padding:2rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0;">'
+                                f'<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1rem auto; animation: spin 1s linear infinite;"></div>'
+                                f'<p style="font-size:1.1rem; color:#1a1a1a;">High demand, retrying...</p>'
+                                f'<p style="font-size:0.85rem; color:#8b8b8b;">Please wait {wait_time:.0f} seconds</p>'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+                            time.sleep(wait_time)
                             continue
-                        break  # Step down to 2.5 Flash
-                    return f"API Error: {str(e)[:300]}"
-
-        return "API Error: All Gemini engine lines are heavily loaded right now."
+                        else:
+                            break  # Move to next model after 2 retries
+                    
+                    # Rate limiting (other than 429) - move to next model
+                    elif "rate" in error_str.lower() or "quota" in error_str.lower():
+                        time.sleep(2)
+                        break
+                    
+                    # Any other error - return it
+                    else:
+                        return f"Error: {error_str[:300]}"
+        
+        # All models exhausted - user-friendly message
+        status_ui.error(
+            "The system is currently under high load. Please try again in a few minutes."
+        )
+        return None
+        
     except Exception as e:
-        return f"Initialization Error: {str(e)[:300]}"
+        return f"System Error: {str(e)[:300]}"
 
 def generate_proposal(industry, proposal_type, tone, sender_name, sender_credentials,
                       client_name, client_problem, deliverables, budget_range, timeline, sections, status_ui):

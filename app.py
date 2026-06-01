@@ -4,6 +4,7 @@ Streamlit application with five-screen progressive disclosure flow.
 """
 
 import streamlit as st
+import time  # ADD THIS - missing import!
 from datetime import datetime
 from config.language_registry import (
     LANGUAGE_REGISTRY,
@@ -14,6 +15,33 @@ from config.language_registry import (
 )
 from engine.prompt_builder import generate_proposal
 from utils.pdf_export import generate_pdf
+
+# =============================================================================
+# SESSION STATE INITIALIZATION - SINGLE SOURCE OF TRUTH
+# =============================================================================
+
+# Initialize ONLY ONCE at app startup
+if "proposalos" not in st.session_state:
+    st.session_state.proposalos = {
+        "current_screen": 1,
+        "industry": None,
+        "proposal_type": None,
+        "tone": "Executive",
+        "sender_name": "",
+        "sender_credentials": "",
+        "client_name": "",
+        "client_problem": "",
+        "deliverables": [],
+        "custom_deliverables": "",
+        "budget_range": None,
+        "timeline": None,
+        "selected_sections": [],
+        "proposal_text": "",
+        "generation_complete": False,
+    }
+
+# Single state accessor for the entire app
+state = st.session_state.proposalos
 
 
 # =============================================================================
@@ -33,7 +61,7 @@ st.set_page_config(
 )
 
 # =============================================================================
-# CUSTOM CSS — Moves Streamlit away from "data dashboard" toward "professional tool"
+# CUSTOM CSS — (YOUR EXISTING CSS - keeping it unchanged)
 # =============================================================================
 
 st.markdown("""
@@ -226,7 +254,6 @@ st.markdown("""
     }
 
     /* Progress indicator — scoped to ProposalOS only */
-    /* FIXED: Broken dangling curly bracket removed from right above this rule */
     .ps-progress {
         display: flex;
         justify-content: center;
@@ -274,33 +301,6 @@ st.markdown("""
 
 
 # =============================================================================
-# SESSION STATE INITIALIZATION
-# =============================================================================
-
-if "proposalos" not in st.session_state:
-    st.session_state.proposalos = {
-        "current_screen": 1,
-        "industry": None,
-        "proposal_type": None,
-        "tone": "Executive",
-        "sender_name": "",              # NEW
-        "sender_credentials": "",       # NEW
-        "client_name": "",              # RENAMED from business_name
-        "client_problem": "",
-        "deliverables": [],
-        "custom_deliverables": "",
-        "budget_range": None,
-        "timeline": None,
-        "selected_sections": [],
-        "proposal_text": "",
-        "generation_complete": False,
-    }
-
-# Convenience accessor
-state = st.session_state.proposalos
-
-
-# =============================================================================
 # HELPER: Progress Indicator
 # =============================================================================
 
@@ -319,6 +319,7 @@ def render_progress(current):
         dots_html += f'<div class="ps-step"><div class="ps-dot {dot_class}"></div><span class="ps-label">{label}</span></div>'
     
     st.markdown(f'<div class="ps-progress">{dots_html}</div>', unsafe_allow_html=True)
+
 
 # =============================================================================
 # SCREEN 1: Context Setup
@@ -622,38 +623,31 @@ def render_screen_4():
 # =============================================================================
 
 def render_screen_5():
-    """
-    Renders Screen 5: Final Proposal Generation and Document Packaging
-    """
-    # 1. Initialize the placeholder container safely at the top parent layer
+    """Renders Screen 5: Final Proposal Generation and Document Packaging"""
+    # Use the global state variable - NO redefinition!
     status_placeholder = st.empty()
     
-    # 2. If not yet generated, run the generation sequence inside this block
     if not state["generation_complete"]:
+        # Define CSS once (note the double %% for f-string escaping)
+        SPIN_CSS = '<style>@keyframes spin { 0%% { transform: rotate(0deg); } 100%% { transform: rotate(360deg); } }</style>'
         
-        # Render State 1: Analysis (This displays the animated loading circle natively via CSS)
+        # Initial status
         status_placeholder.markdown(
-            '<div style="text-align:center; padding:3rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:2rem 0;">'
-            '<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1.25rem auto; animation: spin 1s linear infinite;"></div>'
-            '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Analyzing your inputs...</p>'
-            '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Mapping industry language and client context</p>'
-            '</div>'
-            '<style>'
-            '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }'
-            '</style>',
+            f'<div style="text-align:center; padding:2.5rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:1.5rem 0;">'
+            f'<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1.25rem auto; animation: spin 1s linear infinite;"></div>'
+            f'<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Connecting to ProposalOS Engine...</p>'
+            f'<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Initializing secure pipeline data channels...</p>'
+            f'</div>{SPIN_CSS}',
             unsafe_allow_html=True,
         )
         
-        # Prepare deliverables data array (Indented safely inside the IF block)
+        # Prepare deliverables
         all_deliverables = state["deliverables"].copy()
         if state["custom_deliverables"].strip():
             all_deliverables.append(state["custom_deliverables"].strip())
         deliverables_str = ", ".join(all_deliverables) if all_deliverables else ""
         
         try:
-            # 3. Trigger the proposal engine call.
-            # Inside call_gemini, it will instantly wipe State 1 and rewrite the container
-            # to show: "Structuring your proposal... Building an executive narrative"
             proposal = generate_proposal(
                 industry=state["industry"],
                 proposal_type=state["proposal_type"],
@@ -666,101 +660,96 @@ def render_screen_5():
                 budget_range=state["budget_range"],
                 timeline=state["timeline"],
                 sections=state["selected_sections"],
-                status_ui=status_placeholder, # Keeps the memory reference bound
+                status_ui=status_placeholder,
             )
             
-            # 4. Render State 3: Final Document Polish
+            # Final packaging status
             status_placeholder.markdown(
-                '<div style="text-align:center; padding:3rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:2rem 0;">'
-                '<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1.25rem auto; animation: spin 1s linear infinite;"></div>'
-                '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Formatting your document...</p>'
-                '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Preparing corporate brand stylesheets and print engines</p>'
-                '</div>'
-                '<style>'
-                '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }'
-                '</style>',
+                f'<div style="text-align:center; padding:2.5rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:1.5rem 0;">'
+                f'<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1.25rem auto; animation: spin 1s linear infinite;"></div>'
+                f'<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Packaging Final Document Layout...</p>'
+                f'<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Applying consulting brand stylesheets and print assets...</p>'
+                f'</div>{SPIN_CSS}',
                 unsafe_allow_html=True,
             )
-            import time
-            time.sleep(1.2) # Brief visual cushion to allow reading
+            time.sleep(1.0)
             
-            # 5. Save proposal payload data and trigger clean reload
             state["proposal_text"] = proposal
             state["generation_complete"] = True
             status_placeholder.empty()
             st.rerun()
-
+            
         except Exception as e:
             status_placeholder.error(f"Generation Pipeline Error: {str(e)}")
+            return  # Don't proceed to display if error
 
-    # 6. AFTER generation is complete, the app reloads and runs code below this line
-    # (Put your original proposal text viewing layout and download buttons here!)
+    # Only show output if generation is complete
+    if state["generation_complete"]:
+        # Success header
+        st.markdown("### Your proposal is ready")
+        st.markdown(
+            f'<p style="color:#8b8b8b;">Prepared for: {state["client_name"]}</p>',
+            unsafe_allow_html=True,
+        )
 
-    # Success header
-    st.markdown("### Your proposal is ready")
-    st.markdown(
-        f'<p style="color:#8b8b8b;">Prepared for: {state["client_name"]}</p>',
-        unsafe_allow_html=True,
-    )
+        # Action buttons
+        col1, col2, col3, col4 = st.columns([1.2, 1, 1, 1])
+        with col1:
+            try:
+                pdf_bytes = generate_pdf(
+                    state["proposal_text"],
+                    state["client_name"],
+                    state["proposal_type"],
+                    state["sender_name"]
+                )
+                st.download_button(
+                    label="📥 Download PDF",
+                    data=pdf_bytes,
+                    file_name=f"Proposal_{state['client_name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                )
+            except Exception as e:
+                st.warning(f"PDF unavailable: {e}")
 
-    # Action buttons
-    col1, col2, col3, col4 = st.columns([1.2, 1, 1, 1])
-    with col1:
-        try:
-            pdf_bytes = generate_pdf(
-    state["proposal_text"],
-    state["client_name"],
-    state["proposal_type"],
-    state["sender_name"]
-)
-            st.download_button(
-                label="📥 Download PDF",
-                data=pdf_bytes,
-                file_name=f"Proposal_{state['client_name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-            )
-        except Exception as e:
-            st.warning(f"PDF unavailable: {e}")
+        with col2:
+            if st.button("🔄 Regenerate", use_container_width=True):
+                state["generation_complete"] = False
+                st.rerun()
 
-    with col2:
-        if st.button("🔄 Regenerate", use_container_width=True):
-            state["generation_complete"] = False
-            st.rerun()
+        with col3:
+            if st.button("✕ Start New", use_container_width=True):
+                # Reset state
+                for key in st.session_state.proposalos:
+                    if key == "current_screen":
+                        st.session_state.proposalos[key] = 1
+                    elif key == "tone":
+                        st.session_state.proposalos[key] = "Executive"
+                    elif isinstance(st.session_state.proposalos[key], list):
+                        st.session_state.proposalos[key] = []
+                    elif isinstance(st.session_state.proposalos[key], bool):
+                        st.session_state.proposalos[key] = False
+                    else:
+                        st.session_state.proposalos[key] = "" if key != "industry" else None
+                st.rerun()
 
-    with col3:
-        if st.button("✕ Start New", use_container_width=True):
-            # Reset state
-            for key in st.session_state.proposalos:
-                if key == "current_screen":
-                    st.session_state.proposalos[key] = 1
-                elif key == "tone":
-                    st.session_state.proposalos[key] = "Executive"
-                elif isinstance(st.session_state.proposalos[key], list):
-                    st.session_state.proposalos[key] = []
-                elif isinstance(st.session_state.proposalos[key], bool):
-                    st.session_state.proposalos[key] = False
-                else:
-                    st.session_state.proposalos[key] = "" if key != "industry" else None
-            st.rerun()
+        st.markdown("---")
 
-    st.markdown("---")
+        # Proposal output
+        st.markdown('<div class="proposal-output">', unsafe_allow_html=True)
+        st.markdown(state["proposal_text"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # Proposal output
-    st.markdown('<div class="proposal-output">', unsafe_allow_html=True)
-    st.markdown(state["proposal_text"])
-    st.markdown("</div>", unsafe_allow_html=True)
+        # Follow-up message
+        st.markdown("---")
+        st.markdown("### 📱 Follow-Up Message")
+        st.info(
+            "The Follow-Up Message is displayed above. Copy it directly to use in your email. "
+            "The downloadable PDF contains the proposal."
+        )
 
-    # Follow-up message
-    st.markdown("---")
-    st.markdown("### 📱 Follow-Up Message")
-    st.info(
-    "The Follow-Up Message is displayed above. Copy it directly to use in your email. "
-    "The downloadable PDF contains the proposal."
-    )
-
-    # CTA
-    st.markdown("""
+        # CTA
+        st.markdown("""
 <div class="cta-box">
     <h4>Want proposals that consistently win higher-value clients?</h4>
     <p>
