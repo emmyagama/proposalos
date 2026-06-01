@@ -625,49 +625,59 @@ def render_screen_5():
     # If not yet generated, run generation
     if not state["generation_complete"]:
         status_placeholder = st.empty()
+    
+    # Wrap the entire generation process inside an active visual spinner block
+    with st.spinner("Initializing ProposalOS Engine..."):
         
-        # 1. Start with the initial analysis message
+        # 1. Initial State UI (Renders instantly on click)
         status_placeholder.markdown(
-            '<div style="text-align:center;padding:2rem 0;">'
-            '<p style="font-size:1.1rem;color:#1a1a1a;margin-bottom:0.5rem;">Analyzing your inputs...</p>'
-            '<p style="font-size:0.85rem;color:#8b8b8b;">Mapping industry language and client context</p>'
-            '</div>',
+            '<div style="text-align:center; padding:3rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:2rem 0;">'
+            '<div class="spinner-pulse" style="width:12px; height:12px; background:#8B7355; border-radius:50%; margin:0 auto 1rem auto; animation: pulse 1.5s infinite ease-in-out;"></div>'
+            '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Analyzing inputs...</p>'
+            '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Mapping industry language patterns and client context</p>'
+            '</div>'
+            '<style>'
+            '@keyframes pulse { 0% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.8); opacity: 0.5; } }'
+            '</style>',
             unsafe_allow_html=True,
         )
         
-        # Prepare deliverables string
+        # Prepare deliverables string array variables
         all_deliverables = state["deliverables"].copy()
         if state["custom_deliverables"].strip():
             all_deliverables.append(state["custom_deliverables"].strip())
         deliverables_str = ", ".join(all_deliverables) if all_deliverables else ""
         
-        # 2. Pass the status_placeholder into generate_proposal as a parameter
+        # 2. Trigger the engine call. 
+        # Inside call_gemini, it will instantly update status_placeholder 
+        # to "Structuring your proposal..." using Gemini 3.5 Flash!
         proposal = generate_proposal(
-    industry=state["industry"],
-    proposal_type=state["proposal_type"],
-    tone=state["tone"],
-    sender_name=state["sender_name"],
-    sender_credentials=state["sender_credentials"],
-    client_name=state["client_name"],
-    client_problem=state["client_problem"],
-    deliverables=deliverables_str,
-    budget_range=state["budget_range"],
-    timeline=state["timeline"],
-    sections=state["selected_sections"],  # Make sure this matches!
-    status_ui=status_placeholder,         # Make sure this matches!
-)
+            industry=state["industry"],
+            proposal_type=state["proposal_type"],
+            tone=state["tone"],
+            sender_name=state["sender_name"],
+            sender_credentials=state["sender_credentials"],
+            client_name=state["client_name"],
+            client_problem=state["client_problem"],
+            deliverables=deliverables_str,
+            budget_range=state["budget_range"],
+            timeline=state["timeline"],
+            sections=state["selected_sections"],
+            status_ui=status_placeholder, # Keeps updating screen text dynamically
+        )
         
-        # 3. Final step after text is generated
+        # 3. Final visual polish stage text
         status_placeholder.markdown(
-            '<div style="text-align:center;padding:2rem 0;">'
-            '<p style="font-size:1.1rem;color:#1a1a1a;margin-bottom:0.5rem;">Formatting your document...</p>'
-            '<p style="font-size:0.85rem;color:#8b8b8b;">Preparing PDF and final output</p>'
+            '<div style="text-align:center; padding:3rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:2rem 0;">'
+            '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Formatting document layout...</p>'
+            '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Preparing corporate brand stylesheets and print engines</p>'
             '</div>',
             unsafe_allow_html=True,
         )
         import time
-        time.sleep(1) # Brief pause so they can read the formatting step
+        time.sleep(1.2) # Brief structural pause so the user can read the final status
         
+        # Save payload data and commit page refresh
         state["proposal_text"] = proposal
         state["generation_complete"] = True
         status_placeholder.empty()
