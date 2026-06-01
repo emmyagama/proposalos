@@ -622,72 +622,79 @@ def render_screen_4():
 # =============================================================================
 
 def render_screen_5():
-    # If not yet generated, run generation
+    """
+    Renders Screen 5: Final Proposal Generation and Document Packaging
+    """
+    # 1. Initialize the placeholder container safely at the top parent layer
+    status_placeholder = st.empty()
+    
+    # 2. If not yet generated, run the generation sequence inside this block
     if not state["generation_complete"]:
-    # 1. Initialize the placeholder container safely
-        status_placeholder = st.empty()
-    
-    # 2. Render State 1: Analysis (This displays the animated loading circle natively via CSS)
-    status_placeholder.markdown(
-        '<div style="text-align:center; padding:3rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:2rem 0;">'
-        '<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1.25rem auto; animation: spin 1s linear infinite;"></div>'
-        '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Analyzing your inputs...</p>'
-        '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Mapping industry language and client context</p>'
-        '</div>'
-        '<style>'
-        '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }'
-        '</style>',
-        unsafe_allow_html=True,
-    )
-    
-    # Prepare deliverables data array
-    all_deliverables = state["deliverables"].copy()
-    if state["custom_deliverables"].strip():
-        all_deliverables.append(state["custom_deliverables"].strip())
-    deliverables_str = ", ".join(all_deliverables) if all_deliverables else ""
-    
-    try:
-        # 3. Trigger the proposal engine call.
-        # Inside call_gemini, it will instantly wipe State 1 and rewrite the container
-        # to show: "Structuring your proposal... Building an executive narrative"
-        proposal = generate_proposal(
-            industry=state["industry"],
-            proposal_type=state["proposal_type"],
-            tone=state["tone"],
-            sender_name=state["sender_name"],
-            sender_credentials=state["sender_credentials"],
-            client_name=state["client_name"],
-            client_problem=state["client_problem"],
-            deliverables=deliverables_str,
-            budget_range=state["budget_range"],
-            timeline=state["timeline"],
-            sections=state["selected_sections"],
-            status_ui=status_placeholder, # Keeps the memory reference bound
-        )
         
-        # 4. Render State 3: Final Document Polish
+        # Render State 1: Analysis (This displays the animated loading circle natively via CSS)
         status_placeholder.markdown(
             '<div style="text-align:center; padding:3rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:2rem 0;">'
             '<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1.25rem auto; animation: spin 1s linear infinite;"></div>'
-            '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Formatting your document...</p>'
-            '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Preparing corporate brand stylesheets and print engines</p>'
+            '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Analyzing your inputs...</p>'
+            '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Mapping industry language and client context</p>'
             '</div>'
             '<style>'
             '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }'
             '</style>',
             unsafe_allow_html=True,
         )
-        import time
-        time.sleep(1.2) # Brief visual cushion to allow reading
         
-        # 5. Save proposal payload data and trigger clean reload
-        state["proposal_text"] = proposal
-        state["generation_complete"] = True
-        status_placeholder.empty()
-        st.rerun()
+        # Prepare deliverables data array (Indented safely inside the IF block)
+        all_deliverables = state["deliverables"].copy()
+        if state["custom_deliverables"].strip():
+            all_deliverables.append(state["custom_deliverables"].strip())
+        deliverables_str = ", ".join(all_deliverables) if all_deliverables else ""
+        
+        try:
+            # 3. Trigger the proposal engine call.
+            # Inside call_gemini, it will instantly wipe State 1 and rewrite the container
+            # to show: "Structuring your proposal... Building an executive narrative"
+            proposal = generate_proposal(
+                industry=state["industry"],
+                proposal_type=state["proposal_type"],
+                tone=state["tone"],
+                sender_name=state["sender_name"],
+                sender_credentials=state["sender_credentials"],
+                client_name=state["client_name"],
+                client_problem=state["client_problem"],
+                deliverables=deliverables_str,
+                budget_range=state["budget_range"],
+                timeline=state["timeline"],
+                sections=state["selected_sections"],
+                status_ui=status_placeholder, # Keeps the memory reference bound
+            )
+            
+            # 4. Render State 3: Final Document Polish
+            status_placeholder.markdown(
+                '<div style="text-align:center; padding:3rem 1rem; border-radius:12px; background:#fafaf8; border:1px solid #e8e5e0; margin:2rem 0;">'
+                '<div class="loading-circle" style="border: 3px solid #e8e5e0; border-top: 3px solid #8B7355; border-radius: 50%; width: 24px; height: 24px; margin: 0 auto 1.25rem auto; animation: spin 1s linear infinite;"></div>'
+                '<p style="font-size:1.25rem; font-weight:600; color:#1a1a1a; margin-bottom:0.5rem; font-family:Inter, sans-serif;">Formatting your document...</p>'
+                '<p style="font-size:0.9rem; color:#8b8b8b; font-family:Inter, sans-serif;">Preparing corporate brand stylesheets and print engines</p>'
+                '</div>'
+                '<style>'
+                '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }'
+                '</style>',
+                unsafe_allow_html=True,
+            )
+            import time
+            time.sleep(1.2) # Brief visual cushion to allow reading
+            
+            # 5. Save proposal payload data and trigger clean reload
+            state["proposal_text"] = proposal
+            state["generation_complete"] = True
+            status_placeholder.empty()
+            st.rerun()
 
-    except Exception as e:
-        status_placeholder.error(f"Generation Pipeline Error: {str(e)}")
+        except Exception as e:
+            status_placeholder.error(f"Generation Pipeline Error: {str(e)}")
+
+    # 6. AFTER generation is complete, the app reloads and runs code below this line
+    # (Put your original proposal text viewing layout and download buttons here!)
 
     # Success header
     st.markdown("### Your proposal is ready")
