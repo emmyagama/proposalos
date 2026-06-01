@@ -49,7 +49,7 @@ def build_system_prompt(industry, proposal_type, tone, sections=None):
     section_templates = {
         "Executive Summary": "2-3 paragraphs. Open with sender credibility. State the core problem and proposed outcome. Punchy close.",
         "Understanding Your Situation": "2-3 paragraphs. Open by linking to the core recommendation. Describe what's happening using concrete symptoms. Show what's at stake. Use the symptom language. Include one expert observation about the type of problem being addressed; the observation should - explain why the problem commonly occurs, explain what organizations often misdiagnose, explain why the proposed methodology is appropriate; the observation must be based on general consulting experience. Do not invent facts about the client. Every observation should support a specific argument for change.",
-        "Proposed Solution": "Open by restating the recommendation. Then structure as three supporting arguments: what we'll do, how we'll do it, what you'll receive. Each argument should connect to a specific problem from the previous section. Be specific about deliverables. Avoid stacked jargon.",
+        "Proposed Solution": "Open by restating the recommendation. Then structure as three supporting arguments using the headers: what we'll do, how we'll do it, what you'll receive. Each argument should connect to a specific problem from the previous section. For the How we'll do it and What you'll receive sections, break the details down into a clean, bulleted list. Ensure the deliverables are highly specific, tangible, and free of stacked jargon. Do not merge these sections into standard text paragraphs",
         "Scope of Work": "Bulleted list. Clear boundaries — what's included and what's not. Short phrases.",
         "Timeline": "Phased breakdown with durations. Link phases to deliverables.",
         "Investment & Value Justification": "Frame cost as investment. Connect to outcomes. Reference the cost of inaction. Each value claim should tie back to an argument made in the Solution section. For diagnostic engagements, DO NOT promise business outcomes; Promise:, clarity, prioritization, risk visibility, decision support",
@@ -166,6 +166,7 @@ def call_gemini(system_prompt, user_prompt, status_ui):
             temperature=0.2,
             max_output_tokens=8000,
             top_p=0.8,
+            system_instruction=system_prompt,
         )
 
         for model_name in models_to_try:
@@ -189,13 +190,10 @@ def call_gemini(system_prompt, user_prompt, status_ui):
 
             for attempt in range(2): 
                 try:
-                    # 3. Force system/user instructions structural separation explicitly inside contents
+                
                     response = client.models.generate_content(
                         model=model_name,
-                        contents=[
-                            {"role": "system", "parts": [{"text": system_prompt}]},
-                            {"role": "user", "parts": [{"text": user_prompt}]}
-                        ],
+                        contents=user_prompt,
                         config=config
                     )
                     return response.text
