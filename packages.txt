@@ -6,3 +6,4 @@ libffi-dev
 shared-mime-info
 libjpeg-dev
 zlib1g-dev
+liblcms2-dev
