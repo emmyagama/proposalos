@@ -15,6 +15,8 @@ from config.language_registry import (
 )
 from engine.prompt_builder import generate_proposal
 from utils.pdf_export import generate_pdf
+from utils.context_miner import mine_file_context  # ← ADD THIS
+from engine.local_coach import run_local_audit     # ← ADD THIS
 
 # =============================================================================
 # SESSION STATE INITIALIZATION - SINGLE SOURCE OF TRUTH
@@ -38,6 +40,7 @@ if "proposalos" not in st.session_state:
         "selected_sections": [],
         "proposal_text": "",
         "generation_complete": False,
+        "mined_brief": "",
     }
 
 # Single state accessor for the entire app
@@ -457,6 +460,19 @@ def render_screen_2():
         height=150,
         label_visibility="collapsed",
     )
+    st.markdown("### Optional: Upload Project Brief / RFP")
+    uploaded_brief = st.file_uploader(
+        "Upload a PDF or TXT brief. Our miner will extract key insights.",
+        type=["pdf", "txt"]
+    )
+    if uploaded_brief is not None:
+        # Run local algorithmic processing and save to session state memory
+        state["mined_brief"] = mine_file_context(
+            uploaded_brief, 
+            industry=state["industry"], 
+            proposal_type=state["proposal_type"]
+        )
+        st.success("✅ Document context parsed!")
     state["client_problem"] = client_problem
 
     # Continue
@@ -581,6 +597,15 @@ def render_screen_4():
         state["current_screen"] = 3
         st.rerun()
 
+# Run 0ms token-free algorithmic local review check
+    coaching_tips = run_local_audit(state)
+    if coaching_tips:
+        st.markdown('<div class="card" style="border-left: 4px solid #8B7355; background: #fafaf8;">', unsafe_allow_html=True)
+        st.markdown("<h3 style='margin-top:0;'>💡 ProposalOS Recommendations</h3>", unsafe_allow_html=True)
+        for tip in coaching_tips:
+            st.info(tip)
+        st.markdown('</div>', unsafe_allow_html=True)
+
     st.markdown("### Review proposal structure")
     st.markdown(
         '<p style="color:#8b8b8b;font-size:0.85rem;">'
@@ -661,6 +686,7 @@ def render_screen_5():
                 timeline=state["timeline"],
                 sections=state["selected_sections"],
                 status_ui=status_placeholder,
+                mined_brief=state["mined_brief"],
             )
             
             # Final packaging status

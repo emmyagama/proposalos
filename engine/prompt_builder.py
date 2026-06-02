@@ -131,13 +131,69 @@ Now generate the proposal following all instructions above."""
     
     return system_prompt
 
-def build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline):
+def build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline, mined_brief=""):
     """
-    Builds the user context prompt. Concise, fact-dense, no wasted tokens.
+    Builds the user context prompt. If mined_brief contains an RFP, it takes priority.
     """
     credential_line = f"Sender credentials: {sender_credentials}" if sender_credentials.strip() else "Sender credentials: Experienced consulting firm"
+    
+    # Check if we have substantial RFP content (more than just a few words)
+    has_rfp = mined_brief and len(mined_brief.strip()) > 200
 
-    user_prompt = f"""Sender: {sender_name if sender_name else 'Consulting Firm'}
+    # Debug - remove after testing
+    if mined_brief:
+        print(f"📄 Mined brief length: {len(mined_brief)} chars")
+        if len(mined_brief) < 500:
+            print(f"⚠️ WARNING: Mined brief seems short! Content: {mined_brief[:200]}")
+    
+    if has_rfp:
+        # RFP MODE - The uploaded document is the primary source
+        user_prompt = f"""
+╔════════════════════════════════════════════════════════════════════════════╗
+║  OFFICIAL CLIENT DOCUMENT / REQUEST FOR PROPOSAL (RFP)                     ║
+║  THIS IS THE AUTHORITATIVE SOURCE - FOLLOW IT EXACTLY                      ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+{mined_brief}
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  WHO IS RESPONDING (Your firm identity)                                    ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Sender: {sender_name if sender_name else 'Consulting Firm'}
+{credential_line}
+Client: {client_name if client_name else 'Client Organization'}
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE EXACTLY                     ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+1. IGNORE the "Manual Problem Description" below - the RFP above is the REAL requirement
+2. Extract ALL requirements from the RFP: timeline, budget, audience, deliverables, scope
+3. Do NOT change the program duration - use exactly what the RFP specifies
+4. Do NOT change the target audience - use exactly who the RFP is for
+5. Use the client's terminology and vocabulary from the RFP
+6. Address EVERY work package and deliverable listed in the RFP
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  MANUAL INPUT - IGNORE IF CONTRADICTS THE RFP ABOVE                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Manual Problem Description (IGNORE): {client_problem if client_problem else 'Not specified'}
+Manual Deliverables (IGNORE if RFP has different ones): {deliverables if deliverables else 'Not specified'}
+Manual Budget (USE THE RFP'S BUDGET INSTEAD): {budget_range}
+Manual Timeline (USE THE RFP'S TIMELINE INSTEAD): {timeline}
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║  YOUR TASK                                                               ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Write a professional proposal responding DIRECTLY to the RFP at the top of this prompt.
+The proposal should be tailored for {client_name}.
+"""
+    else:
+        # NORMAL MODE - No RFP, use manual inputs
+        user_prompt = f"""Sender: {sender_name if sender_name else 'Consulting Firm'}
 {credential_line}
 Client: {client_name if client_name else 'Client Organization'}
 Problem: {client_problem if client_problem else 'Not specified — infer from industry context'}
@@ -146,6 +202,7 @@ Budget: {budget_range}
 Timeline: {timeline}
 
 Generate the complete proposal following all structural rules and format specifications."""
+    
     return user_prompt
 
 
@@ -303,17 +360,17 @@ def call_gemini(system_prompt, user_prompt, status_ui):
         return f"System Error: {str(e)[:300]}"
 
 def generate_proposal(industry, proposal_type, tone, sender_name, sender_credentials,
-                      client_name, client_problem, deliverables, budget_range, timeline, sections, status_ui):
-    """
-    Main orchestrator. Builds prompts, calls Gemini, returns proposal text.
-    """
-    # 1. Pass data to build the system prompt
+                      client_name, client_problem, deliverables, budget_range, timeline, sections, status_ui, mined_brief=""):
+    
     system_prompt = build_system_prompt(industry, proposal_type, tone, sections)
     
-    # 2. Pass data to build the user prompt
-    user_prompt = build_user_prompt(sender_name, sender_credentials, client_name, client_problem, deliverables, budget_range, timeline)
+    # Pass mined_brief into your user prompt compile logic
+    user_prompt = build_user_prompt(
+        sender_name, sender_credentials, client_name, client_problem, 
+        deliverables, budget_range, timeline, mined_brief
+    )
     
-    # 3. Pass prompts and the status_ui object down to the network call
+    # Pass the UI controller down to the network call
     proposal = call_gemini(system_prompt, user_prompt, status_ui)
-    
+
     return proposal
